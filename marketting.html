@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Chamber ARIA — Marketing Intelligence Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&family=Fraunces:ital,wght@1,300;1,700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0A0A08;--bg2:#0f0f0d;--bg3:#161614;--bg4:#1e1e1b;--bg5:#252521;
+  --border:rgba(255,255,255,.06);--border2:rgba(255,255,255,.11);--border3:rgba(255,255,255,.18);
+  --text:#F2EFE7;--text2:#8C8A82;--text3:#545250;--text4:#333330;
+  --accent:#C8F04A;--accent2:#A8D030;--accent3:#deff6e;
+  --adim:rgba(200,240,74,.08);--adim2:rgba(200,240,74,.04);--adim3:rgba(200,240,74,.14);
+  --red:#FF5C3A;--teal:#3AFFD4;--amber:#FFB830;--blue:#4A90E2;--purple:#8B67FF;--pink:#FF6B9D;
+  --fd:'Syne',sans-serif;--fm:'DM Mono',monospace;--fs:'Fraunces',serif;
+}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:var(--fd);-webkit-font-smoothing:antialiased;display:flex;flex-direction:column}
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-thumb{background:var(--bg5);border-radius:2px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+/* ── SHELL ───────────────────────────────────────────── */
+.shell{display:flex;height:100vh;overflow:hidden}
+
+/* ── SIDEBAR ─────────────────────────────────────────── */
+.sb{width:220px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.sb-logo{padding:16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:9px;flex-shrink:0}
+.sb-hex{width:28px;height:28px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sb-logo-text{font-size:14px;font-weight:800}
+.sb-logo-text em{color:var(--accent);font-style:normal}
+.sb-aria-badge{font-size:9px;font-family:var(--fm);padding:2px 7px;border-radius:100px;background:rgba(139,103,255,.15);border:1px solid rgba(139,103,255,.3);color:var(--purple);margin-left:auto}
+.sb-section{font-size:9px;font-family:var(--fm);color:var(--text4);letter-spacing:.1em;text-transform:uppercase;padding:12px 14px 5px}
+.sb-nav{flex:1;overflow-y:auto;padding:6px 8px}
+.nav-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:7px;cursor:pointer;transition:all .12s;font-size:12px;font-weight:500;color:var(--text3);border:1px solid transparent}
+.nav-item:hover{background:var(--bg3);color:var(--text2)}
+.nav-item.act{background:var(--adim);color:var(--accent);border-color:rgba(200,240,74,.15)}
+.nav-icon{font-size:13px;flex-shrink:0;width:18px;text-align:center}
+.nav-badge{font-size:9px;font-family:var(--fm);font-weight:700;padding:1px 6px;border-radius:3px;margin-left:auto;background:rgba(255,92,58,.15);color:var(--red)}
+.nav-badge.ok{background:var(--adim);color:var(--accent)}
+.nav-badge.info{background:rgba(58,255,212,.1);color:var(--teal)}
+.sb-status{padding:10px 12px;border-top:1px solid var(--border);flex-shrink:0}
+.status-row{display:flex;align-items:center;gap:7px;padding:5px 0;font-size:11px;font-family:var(--fm);color:var(--text3)}
+.status-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.dot-green{background:var(--accent);animation:pulse 2s ease-in-out infinite}
+.dot-amber{background:var(--amber)}
+.dot-red{background:var(--red)}
+
+/* ── MAIN ────────────────────────────────────────────── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.topbar{height:50px;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:12px;flex-shrink:0;background:var(--bg)}
+.tb-title{font-size:13px;font-weight:700}
+.tb-sub{font-size:11px;font-family:var(--fm);color:var(--text3)}
+.tb-spacer{flex:1}
+.tb-chip{display:flex;align-items:center;gap:5px;font-size:10px;font-family:var(--fm);padding:4px 10px;border-radius:5px;border:1px solid var(--border2);color:var(--text2)}
+.tb-btn{font-size:11px;font-family:var(--fd);font-weight:600;padding:6px 12px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;transition:all .12s}
+.tb-btn:hover{background:var(--bg3);color:var(--text)}
+.tb-btn.primary{background:var(--accent);color:#0A0A08;border-color:var(--accent)}
+.tb-btn.primary:hover{background:var(--accent2)}
+.content{flex:1;overflow-y:auto;padding:20px}
+
+/* ── VIEWS ───────────────────────────────────────────── */
+.view{display:none}
+.view.active{display:block;animation:fadeUp .2s ease both}
+
+/* ── METRIC CARDS ────────────────────────────────────── */
+.metrics-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.metric-card{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:16px 18px;position:relative;overflow:hidden;transition:border-color .15s}
+.metric-card:hover{border-color:var(--border2)}
+.metric-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,var(--accent),transparent);opacity:0;transition:opacity .2s}
+.metric-card:hover::before{opacity:1}
+.mc-label{font-size:10px;font-family:var(--fm);color:var(--text3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:8px}
+.mc-val{font-size:28px;font-weight:800;letter-spacing:-1px;margin-bottom:4px;font-family:var(--fs);font-style:italic}
+.mc-delta{font-size:11px;font-family:var(--fm)}
+.mc-delta.up{color:var(--accent)}
+.mc-delta.dn{color:var(--red)}
+.mc-icon{position:absolute;top:16px;right:16px;font-size:20px;opacity:.25}
+
+/* ── CHARTS ──────────────────────────────────────────── */
+.charts-row{display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:20px}
+.chart-card{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:16px}
+.chart-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.chart-title{font-size:12px;font-weight:700}
+.chart-meta{font-size:10px;font-family:var(--fm);color:var(--text3)}
+.chart-tabs{display:flex;gap:4px}
+.ctab{font-size:10px;font-family:var(--fm);padding:3px 9px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--text3);cursor:pointer;transition:all .12s}
+.ctab.act{background:var(--adim);border-color:rgba(200,240,74,.2);color:var(--accent)}
+
+/* ── PLATFORM ROWS ───────────────────────────────────── */
+.platform-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+.plat-card{background:var(--bg3);border:1px solid var(--border);border-radius:9px;padding:14px}
+.plat-head{display:flex;align-items:center;gap:7px;margin-bottom:10px}
+.plat-icon{font-size:16px}
+.plat-name{font-size:12px;font-weight:700}
+.plat-stat{display:flex;justify-content:space-between;font-size:11px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.plat-stat:last-child{border-bottom:none}
+.plat-key{color:var(--text3);font-family:var(--fm);font-size:10px}
+.plat-val{font-weight:600}
+.plat-bar{height:3px;background:var(--bg5);border-radius:2px;margin-top:8px;overflow:hidden}
+.plat-fill{height:100%;border-radius:2px}
+
+/* ── CONTENT QUEUE ───────────────────────────────────── */
+.content-queue{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px}
+.cq-card{background:var(--bg3);border:1px solid var(--border);border-radius:9px;overflow:hidden;cursor:pointer;transition:all .15s}
+.cq-card:hover{border-color:var(--border2);transform:translateY(-2px)}
+.cq-thumb{height:100px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:28px;position:relative}
+.cq-status{position:absolute;top:8px;right:8px;font-size:9px;font-family:var(--fm);font-weight:700;padding:2px 7px;border-radius:100px}
+.status-live{background:rgba(200,240,74,.2);color:var(--accent);border:1px solid rgba(200,240,74,.3)}
+.status-queued{background:rgba(58,255,212,.1);color:var(--teal);border:1px solid rgba(58,255,212,.2)}
+.status-editing{background:rgba(255,184,48,.1);color:var(--amber);border:1px solid rgba(255,184,48,.2)}
+.status-draft{background:rgba(255,255,255,.06);color:var(--text3);border:1px solid var(--border2)}
+.cq-body{padding:10px 12px}
+.cq-title{font-size:11px;font-weight:700;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cq-meta{font-size:10px;font-family:var(--fm);color:var(--text3);margin-bottom:6px}
+.cq-plats{display:flex;gap:4px}
+.cq-plat{font-size:9px;padding:1px 5px;border-radius:3px;background:var(--bg5);color:var(--text3)}
+.cq-views{font-size:11px;font-family:var(--fm);color:var(--accent);font-weight:700;margin-top:5px}
+
+/* ── INFLUENCER TABLES ───────────────────────────────── */
+.inf-section{margin-bottom:24px}
+.inf-section-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.inf-sec-title{font-size:13px;font-weight:700;flex:1}
+.inf-count{font-size:10px;font-family:var(--fm);padding:2px 8px;border-radius:4px}
+.count-denied{background:rgba(255,92,58,.1);color:var(--red);border:1px solid rgba(255,92,58,.2)}
+.count-progress{background:rgba(255,184,48,.1);color:var(--amber);border:1px solid rgba(255,184,48,.2)}
+.count-signed{background:rgba(200,240,74,.1);color:var(--accent);border:1px solid rgba(200,240,74,.2)}
+.inf-table{width:100%;border-collapse:collapse}
+.inf-table th{font-size:9px;font-family:var(--fm);color:var(--text3);letter-spacing:.07em;text-transform:uppercase;padding:7px 10px;text-align:left;border-bottom:1px solid var(--border)}
+.inf-table td{font-size:11px;padding:9px 10px;border-bottom:1px solid rgba(255,255,255,.04);color:var(--text2);vertical-align:middle}
+.inf-table tr:hover td{background:rgba(255,255,255,.02)}
+.inf-table tr:last-child td{border-bottom:none}
+.inf-handle{font-weight:700;color:var(--text);display:flex;align-items:center;gap:6px}
+.inf-plat{font-size:9px;padding:1px 5px;border-radius:3px;font-family:var(--fm);font-weight:700}
+.plat-tiktok{background:rgba(255,0,80,.1);color:#ff0050}
+.plat-insta{background:rgba(193,53,132,.1);color:#c13584}
+.plat-yt{background:rgba(255,0,0,.1);color:#ff0000}
+.plat-twitter{background:rgba(29,161,242,.1);color:#1da1f2}
+.plat-li{background:rgba(10,102,194,.1);color:#0a66c2}
+.progress-tag{font-size:9px;font-family:var(--fm);font-weight:700;padding:2px 7px;border-radius:100px}
+.pt-cold{background:rgba(84,82,80,.2);color:var(--text3)}
+.pt-opened{background:rgba(58,255,212,.1);color:var(--teal)}
+.pt-replied{background:rgba(255,184,48,.1);color:var(--amber)}
+.pt-negotiating{background:rgba(139,103,255,.15);color:var(--purple)}
+.pt-signed{background:var(--adim);color:var(--accent)}
+.confidence-bar{width:50px;height:4px;background:var(--bg5);border-radius:2px;overflow:hidden;display:inline-block;vertical-align:middle;margin-right:5px}
+.conf-fill{height:100%;border-radius:2px;background:var(--accent)}
+.link-btn{font-size:9px;font-family:var(--fm);color:var(--teal);text-decoration:none;padding:2px 6px;border:1px solid rgba(58,255,212,.2);border-radius:3px;transition:all .12s}
+.link-btn:hover{background:rgba(58,255,212,.08)}
+.action-btn{font-size:9px;font-family:var(--fm);font-weight:600;padding:3px 8px;border-radius:4px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;transition:all .12s}
+.action-btn:hover{color:var(--text);border-color:var(--border3)}
+.table-wrap{background:var(--bg3);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+
+/* ── ARIA CHAT ───────────────────────────────────────── */
+.chat-wrap{display:flex;flex-direction:column;height:calc(100vh - 100px)}
+.chat-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0;background:var(--bg3);border-radius:10px 10px 0 0}
+.aria-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--purple),var(--accent));display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#0A0A08;flex-shrink:0}
+.aria-status{width:8px;height:8px;border-radius:50%;background:var(--accent);position:absolute;bottom:1px;right:1px;border:1.5px solid var(--bg3);animation:pulse 2s ease-in-out infinite}
+.aria-info{flex:1}
+.aria-name{font-size:13px;font-weight:700}
+.aria-role{font-size:10px;font-family:var(--fm);color:var(--accent)}
+.aria-thinking{display:flex;align-items:center;gap:5px;font-size:10px;font-family:var(--fm);color:var(--text3)}
+.think-dots span{animation:blink 1.2s ease-in-out infinite;font-size:16px;line-height:1}
+.think-dots span:nth-child(2){animation-delay:.2s}
+.think-dots span:nth-child(3){animation-delay:.4s}
+.chat-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:14px;background:var(--bg2)}
+.msg{display:flex;gap:9px;max-width:90%}
+.msg.user{align-self:flex-end;flex-direction:row-reverse}
+.msg-av{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0}
+.av-aria{background:linear-gradient(135deg,var(--purple),var(--accent));color:#0A0A08}
+.av-user{background:var(--bg4);border:1px solid var(--border2);color:var(--text2)}
+.msg-bubble{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-size:12px;line-height:1.65;color:var(--text2)}
+.msg.user .msg-bubble{background:var(--adim2);border-color:rgba(200,240,74,.12);color:var(--text)}
+.msg-bubble strong{color:var(--text);font-weight:700}
+.msg-bubble .tag{display:inline-block;font-size:9px;font-family:var(--fm);padding:1px 6px;border-radius:3px;background:var(--bg5);color:var(--text3);margin:1px}
+.msg-time{font-size:9px;font-family:var(--fm);color:var(--text4);margin-top:4px}
+.msg-proactive{background:rgba(139,103,255,.08);border-color:rgba(139,103,255,.2)}
+.msg-proactive::before{content:'💡 ARIA says:';display:block;font-size:9px;font-family:var(--fm);color:var(--purple);margin-bottom:5px;font-weight:700}
+.chat-input-area{padding:12px 16px;border-top:1px solid var(--border);background:var(--bg3);border-radius:0 0 10px 10px;flex-shrink:0}
+.chat-input-row{display:flex;gap:8px;align-items:flex-end}
+.chat-textarea{flex:1;background:var(--bg4);border:1px solid var(--border2);border-radius:7px;padding:9px 12px;font-size:12px;font-family:var(--fd);color:var(--text);outline:none;resize:none;min-height:36px;max-height:100px;transition:border-color .2s;line-height:1.5}
+.chat-textarea:focus{border-color:rgba(200,240,74,.3)}
+.chat-textarea::placeholder{color:var(--text3)}
+.chat-send{width:34px;height:34px;background:var(--accent);border:none;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all .15s;flex-shrink:0}
+.chat-send:hover{background:var(--accent2)}
+.chat-attach{width:28px;height:28px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text3);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;transition:all .12s;flex-shrink:0}
+.chat-attach:hover{color:var(--text);background:var(--bg5)}
+.chat-suggestions{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.sug{font-size:10px;font-family:var(--fm);padding:4px 9px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text3);cursor:pointer;transition:all .12s}
+.sug:hover{color:var(--accent);border-color:rgba(200,240,74,.3);background:var(--adim2)}
+
+/* ── CONTENT CALENDAR ────────────────────────────────── */
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:20px}
+.cal-day{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px;min-height:100px}
+.cal-day-head{font-size:9px;font-family:var(--fm);color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em}
+.cal-day.today{border-color:rgba(200,240,74,.25);background:var(--adim2)}
+.cal-post{background:var(--bg4);border-radius:5px;padding:5px 7px;margin-bottom:5px;font-size:10px;cursor:pointer;transition:all .12s;border:1px solid var(--border)}
+.cal-post:hover{border-color:var(--border2)}
+.cal-post-time{font-family:var(--fm);color:var(--text3);margin-bottom:2px;font-size:9px}
+.cal-post-title{color:var(--text2);line-height:1.4;font-size:10px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-clamp:2;-webkit-box-orient:vertical}
+.cp-plats{display:flex;gap:2px;margin-top:4px}
+.cp-p{font-size:8px;padding:0 3px;border-radius:2px;background:var(--bg5);color:var(--text4)}
+
+/* ── OUTREACH STATS ──────────────────────────────────── */
+.outreach-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+.oc{background:var(--bg3);border:1px solid var(--border);border-radius:9px;padding:14px}
+.oc-num{font-size:32px;font-weight:800;letter-spacing:-2px;font-family:var(--fs);font-style:italic;margin-bottom:4px}
+.oc-label{font-size:10px;font-family:var(--fm);color:var(--text3);letter-spacing:.07em;text-transform:uppercase}
+.oc-change{font-size:11px;font-family:var(--fm);margin-top:4px}
+
+/* ── CAMPAIGN CONFIG ──────────────────────────────────── */
+.config-form{max-width:700px}
+.cf-section{background:var(--bg3);border:1px solid var(--border);border-radius:10px;margin-bottom:14px;overflow:hidden}
+.cf-head{padding:12px 16px;border-bottom:1px solid var(--border);font-size:12px;font-weight:700;display:flex;align-items:center;gap:7px}
+.cf-body{padding:14px 16px}
+.cf-field{margin-bottom:12px}
+.cf-field label{display:block;font-size:9px;font-family:var(--fm);color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:5px}
+.cf-field input,.cf-field select,.cf-field textarea{width:100%;background:var(--bg4);border:1px solid var(--border);border-radius:6px;padding:9px 12px;font-size:12px;font-family:var(--fd);color:var(--text);outline:none;transition:all .2s}
+.cf-field input:focus,.cf-field select:focus,.cf-field textarea:focus{border-color:rgba(200,240,74,.35)}
+.cf-field input::placeholder,.cf-field textarea::placeholder{color:var(--text3)}
+.cf-field select option{background:var(--bg3)}
+.cf-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tag-input-wrap{display:flex;flex-wrap:wrap;gap:5px;background:var(--bg4);border:1px solid var(--border);border-radius:6px;padding:7px 10px;cursor:text;transition:border-color .2s}
+.tag-input-wrap:focus-within{border-color:rgba(200,240,74,.35)}
+.cfg-tag{display:inline-flex;align-items:center;gap:4px;background:var(--bg5);border:1px solid var(--border2);border-radius:4px;padding:2px 8px;font-size:11px;font-family:var(--fm);color:var(--text2)}
+.cfg-tag button{background:none;border:none;color:var(--text3);cursor:pointer;font-size:12px;line-height:1}
+.cfg-tag button:hover{color:var(--red)}
+.clip-library{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.clip-slot{background:var(--bg4);border:2px dashed var(--border2);border-radius:7px;padding:14px;text-align:center;cursor:pointer;transition:all .15s;font-size:11px;color:var(--text3)}
+.clip-slot:hover{border-color:rgba(200,240,74,.3);color:var(--accent);background:var(--adim2)}
+.clip-slot.filled{border-style:solid;border-color:var(--border2);background:var(--bg5)}
+.clip-slot-icon{font-size:20px;margin-bottom:5px}
+.clip-slot-label{font-size:9px;font-family:var(--fm);font-weight:700;letter-spacing:.05em;text-transform:uppercase}
+.clip-count{font-size:10px;font-family:var(--fm);color:var(--accent)}
+.save-config{width:100%;background:var(--accent);color:#0A0A08;font-family:var(--fd);font-size:13px;font-weight:700;padding:12px;border-radius:7px;border:none;cursor:pointer;transition:all .2s;margin-top:4px;display:flex;align-items:center;justify-content:center;gap:8px}
+.save-config:hover{background:var(--accent2)}
+
+/* ── ARIA PROACTIVE BANNER ───────────────────────────── */
+.aria-banner{background:rgba(139,103,255,.07);border:1px solid rgba(139,103,255,.2);border-radius:9px;padding:14px 16px;margin-bottom:16px;display:flex;gap:10px;align-items:flex-start}
+.ab-icon{font-size:20px;flex-shrink:0}
+.ab-title{font-size:12px;font-weight:700;color:var(--purple);margin-bottom:3px}
+.ab-body{font-size:11px;color:var(--text2);line-height:1.65}
+.ab-actions{display:flex;gap:6px;margin-top:8px}
+.ab-btn{font-size:10px;font-family:var(--fd);font-weight:600;padding:5px 12px;border-radius:5px;border:1px solid rgba(139,103,255,.3);background:transparent;color:var(--purple);cursor:pointer;transition:all .12s}
+.ab-btn:hover{background:rgba(139,103,255,.12)}
+.ab-btn.confirm{background:rgba(139,103,255,.15);color:var(--purple)}
+
+/* ── MISC ────────────────────────────────────────────── */
+.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.sec-title{font-size:13px;font-weight:700}
+.sec-sub{font-size:11px;font-family:var(--fm);color:var(--text3)}
+.view-all{font-size:10px;font-family:var(--fm);color:var(--teal);cursor:pointer;transition:color .12s;background:none;border:none}
+.view-all:hover{color:var(--accent)}
+.pill{font-size:9px;font-family:var(--fm);padding:2px 8px;border-radius:100px;border:1px solid}
+.pill-live{background:var(--adim);border-color:rgba(200,240,74,.25);color:var(--accent)}
+.pill-paused{background:rgba(255,184,48,.08);border-color:rgba(255,184,48,.2);color:var(--amber)}
+.ref-tracker{background:linear-gradient(135deg,rgba(200,240,74,.08),rgba(58,255,212,.04));border:1px solid rgba(200,240,74,.2);border-radius:10px;padding:16px 18px;margin-bottom:20px;display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.rt-item{text-align:center}
+.rt-val{font-size:24px;font-weight:800;letter-spacing:-1px;color:var(--accent);font-family:var(--fs);font-style:italic}
+.rt-label{font-size:9px;font-family:var(--fm);color:var(--text3);letter-spacing:.06em;text-transform:uppercase;margin-top:2px}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- ── SIDEBAR ──────────────────────────────────────── -->
+<aside class="sb">
+  <div class="sb-logo">
+    <div class="sb-hex"><svg viewBox="0 0 16 16" fill="none" width="11" height="11"><polygon points="8,1 15,5 15,11 8,15 1,11 1,5" fill="#0A0A08"/></svg></div>
+    <div class="sb-logo-text">Chamber<em>.</em></div>
+    <span class="sb-aria-badge">ARIA</span>
+  </div>
+  <div class="sb-nav">
+    <div class="sb-section">Overview</div>
+    <div class="nav-item act" onclick="showView('overview',this)"><span class="nav-icon">◈</span> Dashboard <span class="nav-badge ok">Live</span></div>
+    <div class="nav-item" onclick="showView('analytics',this)"><span class="nav-icon">📊</span> Analytics</div>
+    
+    <div class="sb-section">Content</div>
+    <div class="nav-item" onclick="showView('queue',this)"><span class="nav-icon">🎬</span> Content Queue <span class="nav-badge">3</span></div>
+    <div class="nav-item" onclick="showView('calendar',this)"><span class="nav-icon">📅</span> Content Calendar</div>
+
+    <div class="sb-section">Influencers</div>
+    <div class="nav-item" onclick="showView('influencers',this)"><span class="nav-icon">🤝</span> Pipeline <span class="nav-badge info">12</span></div>
+    <div class="nav-item" onclick="showView('outreach',this)"><span class="nav-icon">📡</span> Outreach Stats</div>
+
+    <div class="sb-section">ARIA</div>
+    <div class="nav-item" onclick="showView('chat',this)"><span class="nav-icon">🧠</span> Talk to ARIA <span class="nav-badge" style="background:rgba(139,103,255,.15);color:var(--purple)">2</span></div>
+    <div class="nav-item" onclick="showView('config',this)"><span class="nav-icon">⚙️</span> Campaign Config</div>
+  </div>
+  <div class="sb-status">
+    <div class="status-row"><div class="status-dot dot-green"></div>Posting engine active</div>
+    <div class="status-row"><div class="status-dot dot-green"></div>Outreach running</div>
+    <div class="status-row"><div class="status-dot dot-amber"></div>YT API rate limit</div>
+    <div style="margin-top:8px;font-size:9px;font-family:var(--fm);color:var(--text4)">Last sync: 4 min ago</div>
+  </div>
+</aside>
+
+<!-- ── MAIN ──────────────────────────────────────────── -->
+<div class="main">
+  <div class="topbar">
+    <div>
+      <div class="tb-title" id="view-title">Dashboard Overview</div>
+      <div class="tb-sub" id="view-sub">Live · Auto-running · ARIA v2.1</div>
+    </div>
+    <div class="tb-spacer"></div>
+    <div class="tb-chip"><div style="width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulse 2s infinite"></div> CHAMBER50 active</div>
+    <span class="pill pill-live">🟢 Campaign live</span>
+    <button class="tb-btn" onclick="showView('chat',null)">💬 Ask ARIA</button>
+    <button class="tb-btn primary" onclick="showView('config',null)">+ New Campaign</button>
+  </div>
+
+  <div class="content">
+
+    <!-- ══ OVERVIEW ══════════════════════════════════ -->
+    <div class="view active" id="view-overview">
+
+      <!-- ARIA proactive message -->
+      <div class="aria-banner">
+        <div class="ab-icon">🧠</div>
+        <div style="flex:1">
+          <div class="ab-title">ARIA: I need your input on something</div>
+          <div class="ab-body">@ProductHackr (TikTok, 340K followers) replied to our DM and is asking for <strong>40% recurring commission</strong> — above our pre-approved limit. Their engagement is 6.2% which is excellent for their size. Projected revenue: ~$2,100/mo. Should I accept?</div>
+          <div class="ab-actions">
+            <button class="ab-btn confirm" onclick="ariaDecision('accept')">✓ Accept 40%</button>
+            <button class="ab-btn" onclick="ariaDecision('counter')">Counter at 35%</button>
+            <button class="ab-btn" onclick="showView('chat',null)">💬 Discuss with ARIA</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- REFERRAL TRACKER -->
+      <div class="ref-tracker">
+        <div class="rt-item"><div class="rt-val">847</div><div class="rt-label">CHAMBER50 uses</div></div>
+        <div class="rt-item"><div class="rt-val">$4,230</div><div class="rt-label">Revenue attributed</div></div>
+        <div class="rt-item"><div class="rt-val">312</div><div class="rt-val" style="font-size:14px;color:var(--accent)">this month</div><div class="rt-label">Referral code uses</div></div>
+        <div class="rt-item"><div class="rt-val">23</div><div class="rt-label">Active affiliates</div></div>
+      </div>
+
+      <!-- METRICS -->
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="mc-label">Total Views (30d)</div>
+          <div class="mc-val">2.4M</div>
+          <div class="mc-delta up">↑ 34% vs last month</div>
+          <div class="mc-icon">👁</div>
+        </div>
+        <div class="metric-card">
+          <div class="mc-label">Link Clicks (30d)</div>
+          <div class="mc-val">18,240</div>
+          <div class="mc-delta up">↑ 12% vs last month</div>
+          <div class="mc-icon">🔗</div>
+        </div>
+        <div class="metric-card">
+          <div class="mc-label">Signups from Content</div>
+          <div class="mc-val">1,103</div>
+          <div class="mc-delta up">↑ 28% vs last month</div>
+          <div class="mc-icon">👤</div>
+        </div>
+        <div class="metric-card">
+          <div class="mc-label">Influencer Deals Active</div>
+          <div class="mc-val">23</div>
+          <div class="mc-delta up">↑ 5 signed this week</div>
+          <div class="mc-icon">🤝</div>
+        </div>
+      </div>
+
+      <!-- MAIN CHART + DONUT -->
+      <div class="charts-row">
+        <div class="chart-card">
+          <div class="chart-head">
+            <div class="chart-title">Views & Signups Over Time</div>
+            <div class="chart-tabs">
+              <button class="ctab act">7d</button>
+              <button class="ctab">30d</button>
+              <button class="ctab">90d</button>
+            </div>
+          </div>
+          <canvas id="mainChart" height="150"></canvas>
+        </div>
+        <div class="chart-card">
+          <div class="chart-head">
+            <div class="chart-title">Views by Platform</div>
+            <div class="chart-meta">Last 30 days</div>
+          </div>
+          <canvas id="platChart" height="160"></canvas>
+          <div style="display:flex;flex-direction:column;gap:4px;margin-top:10px">
+            <div style="display:flex;justify-content:space-between;font-size:10px;font-family:var(--fm)"><span style="color:var(--text3)">TikTok</span><span style="color:var(--accent)">48%</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:10px;font-family:var(--fm)"><span style="color:var(--text3)">Instagram</span><span style="color:var(--teal)">27%</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:10px;font-family:var(--fm)"><span style="color:var(--text3)">YouTube</span><span style="color:var(--amber)">16%</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:10px;font-family:var(--fm)"><span style="color:var(--text3)">Twitter/X</span><span style="color:var(--purple)">9%</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PLATFORM CARDS -->
+      <div class="section-head"><div class="sec-title">Platform Breakdown</div></div>
+      <div class="platform-grid">
+        <div class="plat-card">
+          <div class="plat-head"><div class="plat-icon">🎵</div><div class="plat-name">TikTok</div><span class="pill pill-live" style="margin-left:auto;font-size:8px">Live</span></div>
+          <div class="plat-stat"><span class="plat-key">Views (7d)</span><span class="plat-val" style="color:var(--accent)">892K</span></div>
+          <div class="plat-stat"><span class="plat-key">Avg watch time</span><span class="plat-val">68%</span></div>
+          <div class="plat-stat"><span class="plat-key">Followers gained</span><span class="plat-val">+1,240</span></div>
+          <div class="plat-stat"><span class="plat-key">Posts (7d)</span><span class="plat-val">14</span></div>
+          <div class="plat-bar"><div class="plat-fill" style="width:88%;background:linear-gradient(90deg,#ff0050,#ff6b9d)"></div></div>
+        </div>
+        <div class="plat-card">
+          <div class="plat-head"><div class="plat-icon">📸</div><div class="plat-name">Instagram</div><span class="pill pill-live" style="margin-left:auto;font-size:8px">Live</span></div>
+          <div class="plat-stat"><span class="plat-key">Views (7d)</span><span class="plat-val" style="color:var(--teal)">504K</span></div>
+          <div class="plat-stat"><span class="plat-key">Avg watch time</span><span class="plat-val">54%</span></div>
+          <div class="plat-stat"><span class="plat-key">Followers gained</span><span class="plat-val">+780</span></div>
+          <div class="plat-stat"><span class="plat-key">Posts (7d)</span><span class="plat-val">14</span></div>
+          <div class="plat-bar"><div class="plat-fill" style="width:62%;background:linear-gradient(90deg,#c13584,#f56040)"></div></div>
+        </div>
+        <div class="plat-card">
+          <div class="plat-head"><div class="plat-icon">▶️</div><div class="plat-name">YouTube</div><span class="pill pill-paused" style="margin-left:auto;font-size:8px">Rate limit</span></div>
+          <div class="plat-stat"><span class="plat-key">Views (7d)</span><span class="plat-val" style="color:var(--amber)">298K</span></div>
+          <div class="plat-stat"><span class="plat-key">Avg watch time</span><span class="plat-val">71%</span></div>
+          <div class="plat-stat"><span class="plat-key">Subs gained</span><span class="plat-val">+430</span></div>
+          <div class="plat-stat"><span class="plat-key">Posts (7d)</span><span class="plat-val">11</span></div>
+          <div class="plat-bar"><div class="plat-fill" style="width:43%;background:linear-gradient(90deg,#ff0000,#ff6600)"></div></div>
+        </div>
+        <div class="plat-card">
+          <div class="plat-head"><div class="plat-icon">𝕏</div><div class="plat-name">Twitter/X</div><span class="pill pill-live" style="margin-left:auto;font-size:8px">Live</span></div>
+          <div class="plat-stat"><span class="plat-key">Views (7d)</span><span class="plat-val" style="color:var(--purple)">168K</span></div>
+          <div class="plat-stat"><span class="plat-key">Eng rate</span><span class="plat-val">4.2%</span></div>
+          <div class="plat-stat"><span class="plat-key">Followers gained</span><span class="plat-val">+210</span></div>
+          <div class="plat-stat"><span class="plat-key">Posts (7d)</span><span class="plat-val">16</span></div>
+          <div class="plat-bar"><div class="plat-fill" style="width:28%;background:linear-gradient(90deg,#1da1f2,#7b61ff)"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ CONTENT QUEUE ════════════════════════════ -->
+    <div class="view" id="view-queue">
+      <div class="section-head"><div><div class="sec-title">Content Queue</div><div class="sec-sub">ARIA auto-manages — editing, scheduling, and publishing</div></div><button class="tb-btn primary">+ Manual Upload</button></div>
+      <div class="content-queue">
+        <div class="cq-card"><div class="cq-thumb" style="background:linear-gradient(135deg,#1a1a0a,#2a2a10)">🎯<div class="cq-status status-live">🔴 LIVE</div></div><div class="cq-body"><div class="cq-title">POV: I analyzed 3 competitors in 60 seconds</div><div class="cq-meta">Posted 2h ago · Day 1 Pillar</div><div class="cq-plats"><span class="cq-plat">TikTok</span><span class="cq-plat">Reels</span><span class="cq-plat">Shorts</span></div><div class="cq-views">↑ 24.8K views</div></div></div>
+        <div class="cq-card"><div class="cq-thumb" style="background:linear-gradient(135deg,#0a1a1a,#10282a)">📊<div class="cq-status status-queued">Queued 7PM</div></div><div class="cq-body"><div class="cq-title">Reddit hates this product (here's what to source instead)</div><div class="cq-meta">Today 7:00 PM · Day 1 Pillar B</div><div class="cq-plats"><span class="cq-plat">TikTok</span><span class="cq-plat">Reels</span></div><div class="cq-views" style="color:var(--text3)">Scheduled</div></div></div>
+        <div class="cq-card"><div class="cq-thumb" style="background:linear-gradient(135deg,#1a0a00,#2a1500)">🔍<div class="cq-status status-editing">Editing…</div></div><div class="cq-body"><div class="cq-title">This $12 product scored 94/100 on Chamber OS</div><div class="cq-meta">Tomorrow 7:30 AM · Results pillar</div><div class="cq-plats"><span class="cq-plat">All</span></div><div class="cq-views" style="color:var(--amber)">ARIA editing</div></div></div>
+        <div class="cq-card"><div class="cq-thumb" style="background:linear-gradient(135deg,#0a0a1a,#12122a)">✍️<div class="cq-status status-draft">Draft</div></div><div class="cq-body"><div class="cq-title">5 products I found with Chamber this week [reaction]</div><div class="cq-meta">Tomorrow 7:00 PM · Educational</div><div class="cq-plats"><span class="cq-plat">TikTok</span><span class="cq-plat">Shorts</span></div><div class="cq-views" style="color:var(--text3)">Script generating…</div></div></div>
+        <div class="cq-card"><div class="cq-thumb" style="background:linear-gradient(135deg,#1a0a1a,#281028)">🎣<div class="cq-status status-draft">Draft</div></div><div class="cq-body"><div class="cq-title">The biggest mistake dropshippers make (hint: no research)</div><div class="cq-meta">Day 3 · Trend hijack</div><div class="cq-plats"><span class="cq-plat">TikTok</span><span class="cq-plat">Reels</span></div><div class="cq-views" style="color:var(--text3)">Awaiting clips</div></div></div>
+        <div class="cq-card"><div class="cq-thumb" style="background:linear-gradient(135deg,#0a1a0a,#102810)">💰<div class="cq-status status-draft">Draft</div></div><div class="cq-body"><div class="cq-title">My product validation process (free tools only)</div><div class="cq-meta">Day 4 · Direct response</div><div class="cq-plats"><span class="cq-plat">All</span></div><div class="cq-views" style="color:var(--text3)">Script pending</div></div></div>
+      </div>
+      <div class="section-head"><div class="sec-title">Best Performing Content (30d)</div><button class="view-all">View all →</button></div>
+      <div class="table-wrap"><table class="inf-table"><thead><tr><th>Title</th><th>Platform</th><th>Views</th><th>Watch%</th><th>Clicks</th><th>Signups</th><th>Score</th></tr></thead><tbody>
+        <tr><td style="color:var(--text);font-weight:600">POV: I found a viral product in 40 seconds</td><td><span class="inf-plat plat-tiktok">TikTok</span></td><td style="color:var(--accent)">1.2M</td><td>74%</td><td>4,820</td><td>312</td><td style="color:var(--accent)">98</td></tr>
+        <tr><td style="color:var(--text);font-weight:600">This AI found my competitor's weakness</td><td><span class="inf-plat plat-insta">Reels</span></td><td style="color:var(--accent)">480K</td><td>68%</td><td>2,100</td><td>187</td><td style="color:var(--accent)">91</td></tr>
+        <tr><td style="color:var(--text);font-weight:600">Chamber OS vs doing it manually (time test)</td><td><span class="inf-plat plat-yt">YT Shorts</span></td><td>340K</td><td>71%</td><td>1,840</td><td>156</td><td style="color:var(--amber)">87</td></tr>
+        <tr><td style="color:var(--text);font-weight:600">I analyzed 10 products. Here are the results.</td><td><span class="inf-plat plat-tiktok">TikTok</span></td><td>290K</td><td>65%</td><td>1,320</td><td>104</td><td style="color:var(--amber)">84</td></tr>
+      </tbody></table></div>
+    </div>
+
+    <!-- ══ INFLUENCER PIPELINE ═══════════════════════ -->
+    <div class="view" id="view-influencers">
+      <div class="section-head"><div><div class="sec-title">Influencer Pipeline</div><div class="sec-sub">ARIA manages all 50 daily outreaches autonomously</div></div><div style="display:flex;gap:8px"><button class="tb-btn" onclick="showView('outreach',null)">View Outreach Stats</button><button class="tb-btn primary">+ Manual Add</button></div></div>
+
+      <!-- IN PROGRESS -->
+      <div class="inf-section">
+        <div class="inf-section-head">
+          <div class="inf-sec-title">🟡 In Progress — Active Negotiations</div>
+          <span class="inf-count count-progress">12 active</span>
+        </div>
+        <div class="table-wrap"><table class="inf-table"><thead><tr><th>Handle</th><th>Platform</th><th>Followers</th><th>Status</th><th>Current Offer</th><th>Days Active</th><th>ARIA Confidence</th><th>Action</th></tr></thead><tbody>
+          <tr><td><div class="inf-handle">@ProductHackr <span style="color:var(--accent);font-size:10px">⭐ HOT</span></div></td><td><span class="inf-plat plat-tiktok">TikTok</span></td><td>340K</td><td><span class="progress-tag pt-negotiating">Negotiating</span></td><td>40% comm / 25% off audience</td><td>3d</td><td><div class="confidence-bar"><div class="conf-fill" style="width:88%"></div></div>88%</td><td><button class="action-btn" onclick="showView('chat',null)">Ask ARIA</button></td></tr>
+          <tr><td><div class="inf-handle">@DropshipDave</div></td><td><span class="inf-plat plat-yt">YouTube</span></td><td>128K</td><td><span class="progress-tag pt-replied">Replied</span></td><td>25% comm / 25% off audience</td><td>1d</td><td><div class="confidence-bar"><div class="conf-fill" style="width:72%"></div></div>72%</td><td><button class="action-btn">View thread</button></td></tr>
+          <tr><td><div class="inf-handle">@EcomWithElena</div></td><td><span class="inf-plat plat-insta">Instagram</span></td><td>87K</td><td><span class="progress-tag pt-opened">Opened DM</span></td><td>25% comm / 25% off audience</td><td>2d</td><td><div class="confidence-bar"><div class="conf-fill" style="width:55%"></div></div>55%</td><td><button class="action-btn">Follow up</button></td></tr>
+          <tr><td><div class="inf-handle">@FBAKingston</div></td><td><span class="inf-plat plat-yt">YouTube</span></td><td>220K</td><td><span class="progress-tag pt-negotiating">Negotiating</span></td><td>30% comm / 40% off audience</td><td>5d</td><td><div class="confidence-bar"><div class="conf-fill" style="width:61%"></div></div>61%</td><td><button class="action-btn">View thread</button></td></tr>
+          <tr><td><div class="inf-handle">@SideHustleSophia</div></td><td><span class="inf-plat plat-twitter">Twitter/X</span></td><td>54K</td><td><span class="progress-tag pt-replied">Replied</span></td><td>25% comm / 25% off audience</td><td>1d</td><td><div class="confidence-bar"><div class="conf-fill" style="width:80%"></div></div>80%</td><td><button class="action-btn">View thread</button></td></tr>
+        </tbody></table></div>
+      </div>
+
+      <!-- SIGNED -->
+      <div class="inf-section">
+        <div class="inf-section-head">
+          <div class="inf-sec-title">✅ Signed — Active Partners</div>
+          <span class="inf-count count-signed">23 partners</span>
+        </div>
+        <div class="table-wrap"><table class="inf-table"><thead><tr><th>Handle</th><th>Platform</th><th>Followers</th><th>Aud. Discount</th><th>Commission</th><th>Posts</th><th>Clicks</th><th>Signups</th><th>Revenue</th></tr></thead><tbody>
+          <tr><td><div class="inf-handle">@EcomAlex</div></td><td><span class="inf-plat plat-tiktok">TikTok</span></td><td>510K</td><td>25% off</td><td style="color:var(--accent)">25% recurring</td><td>4</td><td>3,840</td><td>247</td><td style="color:var(--accent);font-weight:700">$7,203</td></tr>
+          <tr><td><div class="inf-handle">@ShopifySecrets</div></td><td><span class="inf-plat plat-yt">YouTube</span></td><td>198K</td><td>50% off</td><td style="color:var(--accent)">30% recurring</td><td>2</td><td>2,100</td><td>134</td><td style="color:var(--accent);font-weight:700">$3,906</td></tr>
+          <tr><td><div class="inf-handle">@AmazonAntonia</div></td><td><span class="inf-plat plat-insta">Instagram</span></td><td>76K</td><td>25% off</td><td style="color:var(--accent)">25% recurring</td><td>6</td><td>980</td><td>84</td><td style="color:var(--accent);font-weight:700">$2,450</td></tr>
+          <tr><td><div class="inf-handle">@DTCDennis</div></td><td><span class="inf-plat plat-tiktok">TikTok</span></td><td>143K</td><td>25% off</td><td style="color:var(--accent)">25% recurring</td><td>3</td><td>1,420</td><td>98</td><td style="color:var(--accent);font-weight:700">$2,856</td></tr>
+        </tbody></table></div>
+      </div>
+
+      <!-- DENIED -->
+      <div class="inf-section">
+        <div class="inf-section-head">
+          <div class="inf-sec-title">❌ Denied / Rejected</div>
+          <span class="inf-count count-denied">18 archived</span>
+        </div>
+        <div class="table-wrap"><table class="inf-table"><thead><tr><th>Handle</th><th>Platform</th><th>Link</th><th>Followers</th><th>Reason</th><th>Terms Offered</th><th>Date</th></tr></thead><tbody>
+          <tr><td><div class="inf-handle">@BigDropshipper</div></td><td><span class="inf-plat plat-tiktok">TikTok</span></td><td><a href="#" class="link-btn">↗ Profile</a></td><td>890K</td><td>Wants flat $2K fee</td><td>25% comm / 25% off</td><td>3 days ago</td></tr>
+          <tr><td><div class="inf-handle">@AmazonMike99</div></td><td><span class="inf-plat plat-yt">YouTube</span></td><td><a href="#" class="link-btn">↗ Profile</a></td><td>45K</td><td>Uses Jungle Scout exclusively</td><td>25% comm / 25% off</td><td>5 days ago</td></tr>
+          <tr><td><div class="inf-handle">@DropshipQueen</div></td><td><span class="inf-plat plat-insta">Instagram</span></td><td><a href="#" class="link-btn">↗ Profile</a></td><td>230K</td><td>No response after 3 follow-ups</td><td>25% comm / 50% off</td><td>7 days ago</td></tr>
+          <tr><td><div class="inf-handle">@EcomRich</div></td><td><span class="inf-plat plat-twitter">Twitter/X</span></td><td><a href="#" class="link-btn">↗ Profile</a></td><td>32K</td><td>Bot followers (HypeAuditor: 48%)</td><td>N/A (auto-filtered)</td><td>2 days ago</td></tr>
+        </tbody></table></div>
+      </div>
+    </div>
+
+    <!-- ══ ANALYTICS ════════════════════════════════ -->
+    <div class="view" id="view-analytics">
+      <div class="section-head"><div class="sec-title">Deep Analytics</div></div>
+      <div class="metrics-grid">
+        <div class="metric-card"><div class="mc-label">Avg Eng. Rate</div><div class="mc-val">5.8%</div><div class="mc-delta up">↑ 1.2% vs last wk</div><div class="mc-icon">💬</div></div>
+        <div class="metric-card"><div class="mc-label">Conv. Rate (click→signup)</div><div class="mc-val">6.1%</div><div class="mc-delta up">↑ 0.4% vs last wk</div><div class="mc-icon">🔄</div></div>
+        <div class="metric-card"><div class="mc-label">Best Hook Type</div><div class="mc-val" style="font-size:16px;font-family:var(--fd)">POV</div><div class="mc-delta up">3.2× vs direct</div><div class="mc-icon">🎣</div></div>
+        <div class="metric-card"><div class="mc-label">Top Hashtag</div><div class="mc-val" style="font-size:14px;font-family:var(--fm)">#productresearch</div><div class="mc-delta up">2.1M reach</div><div class="mc-icon">#</div></div>
+      </div>
+      <div class="charts-row">
+        <div class="chart-card">
+          <div class="chart-head"><div class="chart-title">Engagement Rate by Content Pillar</div></div>
+          <canvas id="pillarChart" height="160"></canvas>
+        </div>
+        <div class="chart-card">
+          <div class="chart-head"><div class="chart-title">Signups by Source</div></div>
+          <canvas id="sourceChart" height="160"></canvas>
+        </div>
+      </div>
+      <div class="chart-card" style="margin-bottom:20px">
+        <div class="chart-head"><div class="chart-title">CHAMBER50 Referral Code — Daily Uses (30d)</div></div>
+        <canvas id="refChart" height="100"></canvas>
+      </div>
+    </div>
+
+    <!-- ══ CONTENT CALENDAR ═════════════════════════ -->
+    <div class="view" id="view-calendar">
+      <div class="section-head"><div class="sec-title">7-Day Content Calendar</div><div style="display:flex;gap:8px"><button class="tb-btn">← Prev week</button><button class="tb-btn">Next week →</button></div></div>
+      <div class="cal-grid" id="cal-grid"></div>
+    </div>
+
+    <!-- ══ OUTREACH STATS ════════════════════════════ -->
+    <div class="view" id="view-outreach">
+      <div class="section-head"><div class="sec-title">Daily Outreach Performance</div></div>
+      <div class="outreach-grid">
+        <div class="oc"><div class="oc-num" style="color:var(--accent)">50</div><div class="oc-label">Contacts sent today</div><div class="oc-change" style="color:var(--accent)">Target: 50 ✓</div></div>
+        <div class="oc"><div class="oc-num" style="color:var(--teal)">8</div><div class="oc-label">Replies received</div><div class="oc-change" style="color:var(--teal)">16% reply rate</div></div>
+        <div class="oc"><div class="oc-num" style="color:var(--amber)">2</div><div class="oc-label">In active negotiation</div><div class="oc-change" style="color:var(--amber)">4% conv. to negotiate</div></div>
+      </div>
+      <div class="charts-row">
+        <div class="chart-card"><div class="chart-head"><div class="chart-title">Daily Outreach Volume (30d)</div></div><canvas id="outreachChart" height="160"></canvas></div>
+        <div class="chart-card"><div class="chart-head"><div class="chart-title">Reply Rate by Platform</div></div><canvas id="replyChart" height="160"></canvas></div>
+      </div>
+    </div>
+
+    <!-- ══ ARIA CHAT ══════════════════════════════════ -->
+    <div class="view" id="view-chat">
+      <div class="chat-wrap">
+        <div class="chat-header">
+          <div style="position:relative"><div class="aria-avatar">A</div><div class="aria-status"></div></div>
+          <div class="aria-info">
+            <div class="aria-name">ARIA — Head of Marketing</div>
+            <div class="aria-role">Autonomous Revenue & Intelligence Agent · Chamber OS</div>
+          </div>
+          <div class="aria-thinking"><div class="think-dots"><span>.</span><span>.</span><span>.</span></div> Processing 42 data signals</div>
+        </div>
+        <div class="chat-messages" id="chat-messages">
+          <div class="msg"><div class="msg-av av-aria">A</div><div><div class="msg-bubble msg-proactive">I analyzed last week's content and want your input. Our <strong>POV-style hooks</strong> are converting at 3.4× compared to direct pitches. I want to shift to 70% POV content from 50% — that means fewer educational posts mid-week. Trade-off: educational content builds long-term trust but converts slower.<br/><br/>Should I make the switch? <strong>Predicted impact: +28% signups/month</strong>.</div><div class="msg-time">Today, 9:14 AM · ARIA initiative</div></div></div>
+
+          <div class="msg user"><div class="msg-av av-user">Y</div><div><div class="msg-bubble">Yes do it. Also can you focus more on the "product validation" angle in TikTok, I'm seeing that term trend a lot</div><div class="msg-time">Today, 9:22 AM</div></div></div>
+
+          <div class="msg"><div class="msg-av av-aria">A</div><div><div class="msg-bubble">Done — switching to 70% POV immediately. Content queue updated.<br/><br/>"Product validation" is trending — currently at <strong>peak search on TikTok Creative Center</strong>. I'm generating 3 scripts around it right now and rescheduling tomorrow's 7AM post to lead with that angle.<br/><br/>I also ran the hashtag cluster: <span class="tag">#productvalidation</span><span class="tag">#validatebeforeyoubuy</span><span class="tag">#ecomvalidation</span> — these are low saturation, high reach right now. Adding to rotation.<br/><br/>Anything specific you want me to say in those scripts, or should I handle it from the brief?</div><div class="msg-time">Today, 9:23 AM</div></div></div>
+
+          <div class="msg user"><div class="msg-av av-user">Y</div><div><div class="msg-bubble">Use the back scratcher as the example product, use the lifestyle clips and show the Chamber OS dashboard. End with the CHAMBER50 code</div><div class="msg-time">Today, 9:25 AM</div></div></div>
+
+          <div class="msg"><div class="msg-av av-aria">A</div><div><div class="msg-bubble">Perfect. Generating 3 variations:<br/><br/><strong>V1</strong> — "POV: I validated a $4 back scratcher using AI" [Lifestyle hook → Chamber dashboard → results reveal → CHAMBER50 CTA]<br/><br/><strong>V2</strong> — "Would you source this? Let the AI decide" [Product reveal → Chamber analysis running → 87/100 score reveal → CHAMBER50]<br/><br/><strong>V3</strong> — "The back scratcher that scored higher than Airpods" [Bold claim hook → score comparison → Chamber walk-through → CHAMBER50]<br/><br/>I'll have all 3 rendered by 6PM for your review, or I can auto-post the highest-confidence one at 7PM. Your call.</div><div class="msg-time">Today, 9:26 AM</div></div></div>
+        </div>
+        <div style="padding:10px 16px;background:var(--bg3);border-top:1px solid var(--border)">
+          <div class="chat-suggestions">
+            <button class="sug" onclick="injectMsg('What worked best this week?')">What worked best this week?</button>
+            <button class="sug" onclick="injectMsg('Show me the influencer pipeline')">Influencer pipeline update</button>
+            <button class="sug" onclick="injectMsg('Pause Instagram posting for 2 days')">Pause Instagram 2 days</button>
+            <button class="sug" onclick="injectMsg('Generate 5 new video scripts about Chamber OS')">Generate 5 scripts</button>
+            <button class="sug" onclick="injectMsg('How many times has CHAMBER50 been used today?')">CHAMBER50 today</button>
+          </div>
+          <div class="chat-input-row">
+            <button class="chat-attach" title="Attach image/file">📎</button>
+            <textarea class="chat-textarea" id="chat-input" placeholder="Ask ARIA anything, paste images, give instructions…" rows="1" onkeydown="chatKey(event)"></textarea>
+            <button class="chat-send" onclick="sendMsg()">→</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ CONFIG ═════════════════════════════════════ -->
+    <div class="view" id="view-config">
+      <div class="section-head"><div><div class="sec-title">Campaign Configuration</div><div class="sec-sub">ARIA reads these settings and auto-optimizes over time</div></div></div>
+      <div class="config-form">
+        <div class="cf-section">
+          <div class="cf-head">🌐 Target & Identity</div>
+          <div class="cf-body">
+            <div class="cf-row">
+              <div class="cf-field"><label>Website URL</label><input type="url" value="https://chamberos.app"/></div>
+              <div class="cf-field"><label>Referral Code</label><input type="text" value="CHAMBER50"/></div>
+            </div>
+            <div class="cf-field"><label>Target Audience</label><input type="text" value="DTC founders, Amazon FBA sellers, dropshippers, e-commerce agencies, side hustlers researching products"/></div>
+            <div class="cf-row">
+              <div class="cf-field"><label>Brand Voice</label><select><option>Casual / founder-brained</option><option>Professional</option><option>Edgy / bold</option></select></div>
+              <div class="cf-field"><label>Platform Priority</label><select><option>TikTok first</option><option>Instagram first</option><option>YouTube first</option><option>Equal weight</option></select></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="cf-section">
+          <div class="cf-head">🎬 Clip Library</div>
+          <div class="cf-body">
+            <div class="clip-library">
+              <div class="clip-slot filled"><div class="clip-slot-icon">💰</div><div class="clip-slot-label">Type A</div><div style="font-size:9px;font-family:var(--fm);color:var(--text2);margin-top:2px">Rich lifestyle</div><div class="clip-count">12 clips</div></div>
+              <div class="clip-slot filled"><div class="clip-slot-icon">🖥️</div><div class="clip-slot-label">Type B</div><div style="font-size:9px;font-family:var(--fm);color:var(--text2);margin-top:2px">Chamber in use</div><div class="clip-count">8 clips</div></div>
+              <div class="clip-slot filled"><div class="clip-slot-icon">📈</div><div class="clip-slot-label">Type C</div><div style="font-size:9px;font-family:var(--fm);color:var(--text2);margin-top:2px">Results / wins</div><div class="clip-count">6 clips</div></div>
+              <div class="clip-slot filled"><div class="clip-slot-icon">🛍️</div><div class="clip-slot-label">Type D</div><div style="font-size:9px;font-family:var(--fm);color:var(--text2);margin-top:2px">Product demo</div><div class="clip-count">4 clips</div></div>
+              <div class="clip-slot"><div class="clip-slot-icon">+</div><div class="clip-slot-label">Type E</div><div style="font-size:9px;font-family:var(--fm);color:var(--text3);margin-top:2px">Reaction clips</div></div>
+              <div class="clip-slot"><div class="clip-slot-icon">+</div><div class="clip-slot-label">Type F</div><div style="font-size:9px;font-family:var(--fm);color:var(--text3);margin-top:2px">Social proof</div></div>
+              <div class="clip-slot"><div class="clip-slot-icon">+</div><div class="clip-slot-label">Type G</div><div style="font-size:9px;font-family:var(--fm);color:var(--text3);margin-top:2px">Educational</div></div>
+              <div class="clip-slot"><div class="clip-slot-icon">📦</div><div class="clip-slot-label">Demo Item</div><div style="font-size:9px;font-family:var(--fm);color:var(--text2);margin-top:2px">Back scratcher</div><div class="clip-count">3 images</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="cf-section">
+          <div class="cf-head">🏷️ Hashtag Seeds (ARIA expands these automatically)</div>
+          <div class="cf-body">
+            <div class="tag-input-wrap" id="hashtag-wrap">
+              <span class="cfg-tag">#dropshipping <button onclick="removeTag(this)">×</button></span>
+              <span class="cfg-tag">#productresearch <button onclick="removeTag(this)">×</button></span>
+              <span class="cfg-tag">#amazonfba <button onclick="removeTag(this)">×</button></span>
+              <span class="cfg-tag">#ecommerce <button onclick="removeTag(this)">×</button></span>
+              <span class="cfg-tag">#dtcbrand <button onclick="removeTag(this)">×</button></span>
+              <span class="cfg-tag">#shopify <button onclick="removeTag(this)">×</button></span>
+              <span class="cfg-tag">#aitools <button onclick="removeTag(this)">×</button></span>
+              <input style="border:none;background:transparent;outline:none;font-size:11px;font-family:var(--fm);color:var(--text);min-width:80px" placeholder="+ add hashtag" onkeydown="addHashtag(event)"/>
+            </div>
+          </div>
+        </div>
+
+        <div class="cf-section">
+          <div class="cf-head">🤝 Influencer Negotiation Parameters</div>
+          <div class="cf-body">
+            <div class="cf-row">
+              <div class="cf-field"><label>Opening Commission</label><input type="text" value="25% recurring"/></div>
+              <div class="cf-field"><label>Opening Audience Discount</label><input type="text" value="25% first month"/></div>
+            </div>
+            <div class="cf-row">
+              <div class="cf-field"><label>Max Commission (auto-approve)</label><input type="text" value="30%"/></div>
+              <div class="cf-field"><label>Max Discount (auto-approve)</label><input type="text" value="50%"/></div>
+            </div>
+            <div class="cf-row">
+              <div class="cf-field"><label>Max Commission (ask founder)</label><input type="text" value="50%"/></div>
+              <div class="cf-field"><label>Max Discount (ask founder)</label><input type="text" value="75%"/></div>
+            </div>
+          </div>
+        </div>
+
+        <button class="save-config">⚡ Save & Activate Campaign</button>
+      </div>
+    </div>
+
+  </div><!-- end .content -->
+</div><!-- end .main -->
+</div><!-- end .shell -->
+
+<script>
+// ── VIEW SWITCHING ─────────────────────────────────────
+const viewMeta={
+  'overview':['Dashboard Overview','Live · Auto-running · ARIA v2.1'],
+  'analytics':['Deep Analytics','Performance data across all platforms'],
+  'queue':['Content Queue','ARIA auto-manages editing, scheduling, publishing'],
+  'calendar':['Content Calendar','7-day rolling schedule'],
+  'influencers':['Influencer Pipeline','Denied · In Progress · Signed partners'],
+  'outreach':['Outreach Statistics','Daily volume and conversion tracking'],
+  'chat':['Talk to ARIA','Your autonomous marketing head'],
+  'config':['Campaign Configuration','Settings ARIA learns from'],
+};
+function showView(id, el) {
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+id)?.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('act'));
+  if (el) el.classList.add('act');
+  const meta = viewMeta[id]||['Dashboard',''];
+  document.getElementById('view-title').textContent=meta[0];
+  document.getElementById('view-sub').textContent=meta[1];
+}
+
+// ── CHAT ─────────────────────────────────────────────
+function sendMsg() {
+  const inp=document.getElementById('chat-input');
+  const val=inp.value.trim();
+  if(!val)return;
+  addMsg(val,'user');
+  inp.value='';
+  setTimeout(()=>addAriaTyping(val),600);
+}
+function chatKey(e){ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();} }
+function injectMsg(t){ document.getElementById('chat-input').value=t; document.getElementById('chat-input').focus(); }
+
+const ariaReplies={
+  'what worked best this week?':'This week <strong>POV-style hooks on TikTok</strong> absolutely dominated — avg 2.4× watch time vs educational content. Top post: "I found a viral product in 40 seconds" hit 1.2M views. I\'m generating 4 more variations of that exact format for next week.',
+  'influencer pipeline update':'You have <strong>12 active negotiations</strong>, 5 replies today. @ProductHackr is the most urgent — they\'re at 40% commission ask, want a decision by tomorrow. <strong>23 signed partners</strong> drove $16K in attributed revenue this month.',
+  'pause instagram posting for 2 days':'Done — Instagram posting paused for 48 hours starting now. YouTube and TikTok will absorb the extra content capacity. I\'ll monitor if this affects overall reach and report back tomorrow.',
+  'generate 5 new video scripts about chamber os':'Generating 5 scripts now...<br/><br/><strong>1.</strong> "I tested 3 AI product tools so you don\'t have to"<br/><strong>2.</strong> "Chamber OS found a trend 3 weeks before TikTok did"<br/><strong>3.</strong> "POV: You just saved $3,000 in bad product research"<br/><strong>4.</strong> "What 94/100 looks like on a growth score"<br/><strong>5.</strong> "My entire product validation process in 60 seconds"<br/><br/>All ready for your clip assignments. Which do you want me to start editing first?',
+  'how many times has chamber50 been used today?':'<strong>CHAMBER50</strong> has been used <strong>47 times today</strong> (8:00 AM – now). That\'s tracking 12% above yesterday\'s pace. Biggest spike at 12:30 PM — likely from the TikTok post I published at 7 AM this morning. Projected end-of-day: ~72 uses.',
+};
+function addAriaTyping(q){
+  const key=q.toLowerCase();
+  const reply=ariaReplies[key]||`Understood. I\'m analyzing your request: "<em>${q}</em>" and will update you within minutes. If this requires a strategy change, I\'ll execute it and confirm here.`;
+  addMsg(reply,'aria');
+}
+function addMsg(text,who){
+  const c=document.getElementById('chat-messages');
+  const d=document.createElement('div');
+  d.className='msg'+(who==='user'?' user':'');
+  const now=new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+  d.innerHTML=`<div class="msg-av av-${who}">${who==='user'?'Y':'A'}</div><div><div class="msg-bubble">${text}</div><div class="msg-time">${now}</div></div>`;
+  c.appendChild(d);
+  c.scrollTop=c.scrollHeight;
+}
+
+// ── DECISIONS ─────────────────────────────────────────
+function ariaDecision(a){
+  const msgs={'accept':'Got it — accepting 40% for @ProductHackr. I\'ll send the deal confirmation now and add their tracking link to our affiliate dashboard. Expected first post in 5–7 days.','counter':'Countering at 35% now. I\'ll frame it as "the highest we\'ve done for someone at your follower count" — that\'s true and it anchors the conversation. Will update you when they reply.'};
+  document.querySelector('.aria-banner').style.opacity='0.4';
+  showView('chat',null);
+  setTimeout(()=>addMsg(msgs[a],'aria'),300);
+}
+
+// ── HASHTAG TAGS ──────────────────────────────────────
+function removeTag(btn){btn.parentElement.remove()}
+function addHashtag(e){
+  if(e.key==='Enter'||e.key===','){
+    e.preventDefault();
+    const v=e.target.value.replace(',','').trim();
+    if(!v)return;
+    const tag=document.createElement('span');
+    tag.className='cfg-tag';
+    const h=v.startsWith('#')?v:'#'+v;
+    tag.innerHTML=`${h} <button onclick="removeTag(this)">×</button>`;
+    e.target.before(tag);
+    e.target.value='';
+  }
+}
+
+// ── CALENDAR BUILD ────────────────────────────────────
+function buildCalendar(){
+  const grid=document.getElementById('cal-grid');
+  const days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const pillars=['POV Hook','Educational','Results','Competitor','Trend Hijack','Direct CTA','Community'];
+  const today=new Date().getDay();
+  days.forEach((d,i)=>{
+    const isToday=(i===((today+6)%7));
+    const posts=[
+      {t:'7:30 AM',title:pillars[i]+' video #1',plats:['TT','IG','YT']},
+      {t:'7:00 PM',title:pillars[i]+' video #2',plats:['TT','IG']},
+    ];
+    const div=document.createElement('div');
+    div.className='cal-day'+(isToday?' today':'');
+    div.innerHTML=`<div class="cal-day-head">${d}${isToday?' (Today)':''}</div>`+
+      posts.map(p=>`<div class="cal-post">
+        <div class="cal-post-time">${p.t}</div>
+        <div class="cal-post-title">${p.title}</div>
+        <div class="cp-plats">${p.plats.map(x=>`<span class="cp-p">${x}</span>`).join('')}</div>
+      </div>`).join('');
+    grid.appendChild(div);
+  });
+}
+
+// ── CHARTS ────────────────────────────────────────────
+function rgba(hex,a){const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);return `rgba(${r},${g},${b},${a})`}
+const C50='#C8F04A',CTEAL='#3AFFD4',CAMBER='#FFB830',CPURP='#8B67FF',CRED='#FF5C3A';
+
+function mkChart(id,cfg){
+  const el=document.getElementById(id);
+  if(!el)return;
+  Chart.defaults.color='#545250';
+  Chart.defaults.borderColor='rgba(255,255,255,.06)';
+  return new Chart(el,cfg);
+}
+
+function initCharts(){
+  const labels7=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  mkChart('mainChart',{type:'line',data:{labels:labels7,datasets:[
+    {label:'Views (K)',data:[180,240,310,280,420,580,640],borderColor:C50,backgroundColor:rgba('C8F04A',.08),tension:.4,fill:true,pointRadius:3,pointBackgroundColor:C50},
+    {label:'Signups',data:[42,58,71,65,98,134,142],borderColor:CTEAL,backgroundColor:rgba('3AFFD4',.05),tension:.4,fill:true,yAxisID:'y1',pointRadius:3,pointBackgroundColor:CTEAL},
+  ]},options:{responsive:true,interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{usePointStyle:true,font:{size:10}}}},scales:{y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{font:{size:10},callback:v=>v+'K'}},y1:{position:'right',grid:{display:false},ticks:{font:{size:10}}}}}});
+
+  mkChart('platChart',{type:'doughnut',data:{labels:['TikTok','Instagram','YouTube','Twitter'],datasets:[{data:[48,27,16,9],backgroundColor:[rgba('FF0050',.7),rgba('C13584',.7),rgba('FF0000',.7),rgba('1DA1F2',.7)],borderColor:'rgba(0,0,0,.3)',borderWidth:2}]},options:{responsive:true,plugins:{legend:{display:false}},cutout:'65%'}});
+
+  mkChart('pillarChart',{type:'bar',data:{labels:['POV Hook','Results','Trend Hijack','Direct CTA','Educational','Competitor','Community'],datasets:[{label:'Avg Eng Rate %',data:[7.2,6.8,6.1,5.4,4.8,4.2,3.9],backgroundColor:[C50,C50,CTEAL,CAMBER,CAMBER,CPURP,CPURP].map(c=>rgba(c.replace('#',''),.5)),borderColor:[C50,C50,CTEAL,CAMBER,CAMBER,CPURP,CPURP],borderWidth:1,borderRadius:4}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{font:{size:10},callback:v=>v+'%'}},x:{grid:{display:false},ticks:{font:{size:9}}}}}});
+
+  mkChart('sourceChart',{type:'doughnut',data:{labels:['Organic Content','Influencer','Direct','Other'],datasets:[{data:[54,28,12,6],backgroundColor:[rgba('C8F04A',.7),rgba('3AFFD4',.7),rgba('8B67FF',.7),rgba('54524F',.5)],borderColor:'rgba(0,0,0,.3)',borderWidth:2}]},options:{responsive:true,plugins:{legend:{labels:{font:{size:10},usePointStyle:true}}},cutout:'60%'}});
+
+  const days30=Array.from({length:30},(_,i)=>{const d=new Date();d.setDate(d.getDate()-29+i);return d.getDate()+'/'+((d.getMonth()+1));});
+  mkChart('refChart',{type:'bar',data:{labels:days30,datasets:[{label:'CHAMBER50 uses',data:days30.map(()=>Math.floor(5+Math.random()*40)),backgroundColor:rgba('C8F04A',.4),borderColor:C50,borderWidth:1,borderRadius:2}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{font:{size:9}}},x:{grid:{display:false},ticks:{font:{size:8},maxTicksLimit:10}}}}});
+
+  mkChart('outreachChart',{type:'line',data:{labels:days30.slice(-14),datasets:[{label:'Contacts sent',data:[48,50,47,50,50,43,50,50,49,50,46,50,50,50],borderColor:C50,backgroundColor:rgba('C8F04A',.06),fill:true,tension:.3,pointRadius:2},{label:'Replies',data:[6,9,7,8,11,5,8,9,6,10,7,9,8,8],borderColor:CTEAL,backgroundColor:rgba('3AFFD4',.04),fill:true,tension:.3,pointRadius:2}]},options:{responsive:true,plugins:{legend:{labels:{font:{size:10},usePointStyle:true}}},scales:{y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{font:{size:9}}},x:{grid:{display:false},ticks:{font:{size:9},maxTicksLimit:7}}}}});
+
+  mkChart('replyChart',{type:'bar',data:{labels:['TikTok','Instagram','YouTube','Twitter','LinkedIn'],datasets:[{label:'Reply rate %',data:[18,14,12,22,9],backgroundColor:[rgba('FF0050',.6),rgba('C13584',.6),rgba('FF0000',.6),rgba('1DA1F2',.6),rgba('0A66C2',.6)],borderRadius:4}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{font:{size:9},callback:v=>v+'%'}},x:{grid:{display:false},ticks:{font:{size:10}}}}}});
+}
+
+// ── BOOT ──────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded',()=>{
+  buildCalendar();
+  setTimeout(initCharts,50);
+});
+</script>
+</body>
+</html>

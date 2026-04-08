@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Chamber — Plan Upgraded!</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=Fraunces:ital,wght@0,400;1,300;1,700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0A0A08;--bg2:#111110;--bg3:#1A1A18;--border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.13);--text:#F2EFE7;--text2:#8C8A82;--text3:#545250;--accent:#C8F04A;--accent2:#A8D030;--adim:rgba(200,240,74,.09);--teal:#3AFFD4;--amber:#FFB830;--fd:'Syne',sans-serif;--fm:'DM Mono',monospace;--fs:'Fraunces',serif}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:var(--fd);-webkit-font-smoothing:antialiased;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;position:relative;overflow:hidden}
+
+/* PARTICLES */
+.particle{position:absolute;border-radius:50%;pointer-events:none;animation:fall linear infinite}
+@keyframes fall{0%{transform:translateY(-20px) rotate(0deg);opacity:1}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}
+
+/* GLOW */
+.glow{position:absolute;top:20%;left:50%;transform:translateX(-50%);width:600px;height:400px;background:radial-gradient(ellipse,rgba(200,240,74,.12) 0%,transparent 70%);pointer-events:none;animation:glow-pulse 3s ease-in-out infinite}
+@keyframes glow-pulse{0%,100%{opacity:.6}50%{opacity:1}}
+
+/* CONTENT */
+.card{width:100%;max-width:480px;position:relative;z-index:1}
+.state{transition:all .4s ease}
+.state.hidden{opacity:0;transform:translateY(20px);pointer-events:none;position:absolute}
+
+/* CHECKING STATE */
+.check-ring{width:72px;height:72px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 20px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.check-title{font-size:20px;font-weight:800;letter-spacing:-.4px;margin-bottom:8px}
+.check-sub{font-size:13px;color:var(--text2);line-height:1.65;margin-bottom:20px}
+.check-bar{width:280px;height:3px;background:var(--bg3);border-radius:2px;margin:0 auto;overflow:hidden}
+.check-fill{height:100%;background:linear-gradient(90deg,var(--teal),var(--accent));border-radius:2px;width:0;transition:width .4s ease}
+.dots{display:inline-flex;gap:5px;margin-top:12px}
+.dot{width:5px;height:5px;border-radius:50%;background:var(--border2);animation:dot-pulse 1.2s ease-in-out infinite}
+.dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
+@keyframes dot-pulse{0%,80%,100%{background:var(--border2)}40%{background:var(--accent)}}
+
+/* SUCCESS STATE */
+.success-hex{width:80px;height:80px;background:var(--accent);border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:36px;animation:pop .5s cubic-bezier(.34,1.56,.64,1)}
+@keyframes pop{0%{transform:scale(0)}100%{transform:scale(1)}}
+.success-title{font-size:28px;font-weight:800;letter-spacing:-.8px;margin-bottom:8px}
+.success-title em{font-family:var(--fs);font-style:italic;font-weight:400;color:var(--accent)}
+.success-sub{font-size:14px;color:var(--text2);line-height:1.7;margin-bottom:8px}
+.plan-badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-family:var(--fm);font-weight:700;padding:5px 14px;border-radius:100px;background:var(--adim);border:1px solid rgba(200,240,74,.25);color:var(--accent);margin:12px 0 20px;letter-spacing:.04em}
+
+.features-unlocked{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:left;margin-bottom:20px}
+.feat-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:13px}
+.feat-row:last-child{border-bottom:none}
+.feat-check{width:18px;height:18px;border-radius:50%;background:var(--adim);border:1px solid rgba(200,240,74,.25);display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--accent);flex-shrink:0}
+.feat-name{font-weight:600}
+.feat-sub{font-size:11px;color:var(--text2);margin-left:auto;font-family:var(--fm)}
+
+.cta-primary{width:100%;background:var(--accent);color:#0A0A08;font-family:var(--fd);font-size:14px;font-weight:700;padding:13px 24px;border-radius:8px;border:none;cursor:pointer;transition:all .2s;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:8px}
+.cta-primary:hover{background:var(--accent2);transform:translateY(-1px)}
+.cta-secondary{font-size:12px;font-family:var(--fm);color:var(--text3);cursor:pointer;transition:color .15s;background:none;border:none}
+.cta-secondary:hover{color:var(--text2)}
+
+/* ERROR STATE */
+.err-icon{font-size:40px;margin-bottom:16px;opacity:.7}
+.err-title{font-size:20px;font-weight:700;margin-bottom:8px}
+.err-sub{font-size:13px;color:var(--text2);line-height:1.65;margin-bottom:20px}
+.retry-btn{font-size:13px;font-family:var(--fd);font-weight:600;padding:10px 20px;border-radius:7px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;transition:all .15s}
+.retry-btn:hover{color:var(--text);background:var(--bg3)}
+</style>
+</head>
+<body>
+
+<div class="glow"></div>
+<div id="particles"></div>
+
+<div class="card">
+
+  <!-- CHECKING STATE -->
+  <div class="state" id="state-checking">
+    <div class="check-ring"></div>
+    <div class="check-title">Activating your plan…</div>
+    <div class="check-sub">Confirming your payment and upgrading your account. This takes a few seconds.</div>
+    <div class="check-bar"><div class="check-fill" id="check-fill"></div></div>
+    <div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+    <div style="font-size:10px;font-family:var(--fm);color:var(--text3);margin-top:16px" id="check-attempt"></div>
+  </div>
+
+  <!-- SUCCESS STATE -->
+  <div class="state hidden" id="state-success">
+    <div class="success-hex">⚡</div>
+    <div class="success-title">You're in, <em>founder.</em></div>
+    <div class="success-sub">Your plan is active. Time to build something that moves the needle.</div>
+    <div class="plan-badge" id="plan-badge">⚡ GROWTH PLAN ACTIVE</div>
+    <div class="features-unlocked" id="features-list"></div>
+    <button class="cta-primary" onclick="goDashboard()">
+      <span>⚡</span> Open Dashboard →
+    </button>
+    <button class="cta-secondary" onclick="goProfile()">View your profile & referral code</button>
+  </div>
+
+  <!-- ERROR STATE -->
+  <div class="state hidden" id="state-error">
+    <div class="err-icon">⚠️</div>
+    <div class="err-title">Taking longer than expected</div>
+    <div class="err-sub">Your payment went through, but the plan update is taking a moment. It will activate within a few minutes.</div>
+    <button class="retry-btn" onclick="retryCheck()">↻ Try again</button>
+    <div style="margin-top:12px"><button class="cta-secondary" onclick="goDashboard()">Go to dashboard anyway</button></div>
+  </div>
+
+</div>
+
+<script>
+let SUPABASE_URL = '', SUPABASE_ANON_KEY = '';
+const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:3001' : 'https://your-api.com';
+(async () => {
+  const cfg = await fetch(API_BASE + '/api/config').then(r => r.json());
+  SUPABASE_URL = cfg.supabaseUrl;
+  SUPABASE_ANON_KEY = cfg.supabaseAnonKey;
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  // ... rest of init
+})();
+const PLAN_FEATURES = {
+  starter: [
+    {name:'1 report / month',sub:'perfect for testing'},
+    {name:'Ad copy generator',sub:'4 platform hooks'},
+    {name:'Email sequence builder',sub:'6 sequence types'},
+    {name:'SEO keywords',sub:'20 keywords + scores'},
+    {name:'Amazon listing optimizer',sub:'title + bullets'},
+    {name:'Influencer outreach templates',sub:'3 formats'},
+  ],
+  growth: [
+    {name:'25 reports / month',sub:'was 3'},
+    {name:'Go-to-market strategy',sub:'phased launch plan'},
+    {name:'TikTok 30-day calendar',sub:'hooks + hashtags'},
+    {name:'Competitor ad intelligence',sub:'reverse-engineer ads'},
+    {name:'A/B test ideas',sub:'10 tests with priority'},
+    {name:'Trend forecaster',sub:'12-month outlook'},
+    {name:'UGC creator brief',sub:'full production guide'},
+    {name:'Pricing strategy',sub:'margin-aware pricing'},
+  ],
+  scale: [
+    {name:'Unlimited reports',sub:'no monthly cap'},
+    {name:'White-label opportunities',sub:'B2B + reseller'},
+    {name:'API access',sub:'all endpoints'},
+    {name:'Team seats (5)',sub:'invite collaborators'},
+    {name:'Everything in Growth',sub:'all features included'},
+  ],
+};
+
+let _sb, _sess, _attempts = 0, _maxAttempts = 12, _pollInterval;
+
+async function init() {
+  spawnParticles();
+
+  _sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const { data:{session} } = await _sb.auth.getSession();
+  if (!session) { window.location.href='login.html'; return; }
+  _sess = session;
+
+  // Check URL params for plan hint from Stripe
+  const params = new URLSearchParams(window.location.search);
+  const planHint = params.get('plan') || params.get('upgraded');
+
+  startPolling(planHint);
+  animateProgressBar();
+}
+
+async function checkPlan() {
+  const res = await fetch(`${API_BASE}/api/auth/me`, {
+    headers:{ 'Authorization': `Bearer ${_sess.access_token}`, 'Content-Type':'application/json' }
+  });
+  const data = await res.json();
+  return data.profile?.plan || 'free';
+}
+
+function startPolling(planHint) {
+  _attempts = 0;
+  pollOnce(planHint);
+  _pollInterval = setInterval(()=>pollOnce(planHint), 3000);
+}
+
+async function pollOnce(planHint) {
+  _attempts++;
+  document.getElementById('check-attempt').textContent = `Check ${_attempts} of ${_maxAttempts}…`;
+
+  try {
+    const plan = await checkPlan();
+    if (plan && plan !== 'free') {
+      clearInterval(_pollInterval);
+      showSuccess(plan);
+      return;
+    }
+  } catch(e) { /* retry */ }
+
+  if (_attempts >= _maxAttempts) {
+    clearInterval(_pollInterval);
+    showError();
+  }
+}
+
+function showSuccess(plan) {
+  showState('success');
+  spawnConfetti();
+
+  const planUpper = plan.toUpperCase();
+  document.getElementById('plan-badge').textContent = `⚡ ${planUpper} PLAN ACTIVE`;
+
+  const feats = PLAN_FEATURES[plan] || PLAN_FEATURES.growth;
+  document.getElementById('features-list').innerHTML =
+    `<div style="font-size:10px;font-family:var(--fm);color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px">🎁 Unlocked features</div>` +
+    feats.map(f=>`<div class="feat-row">
+      <div class="feat-check">✓</div>
+      <div class="feat-name">${f.name}</div>
+      <div class="feat-sub">${f.sub}</div>
+    </div>`).join('');
+
+  // Auto-redirect after 6s if user doesn't click
+  setTimeout(()=>{ if (document.getElementById('state-success').style.display!=='none') goDashboard(); }, 8000);
+}
+
+function showError() { showState('error'); }
+
+function showState(name) {
+  ['checking','success','error'].forEach(s=>{
+    const el = document.getElementById(`state-${s}`);
+    if (s===name) { el.classList.remove('hidden'); el.style.position='relative'; }
+    else { el.classList.add('hidden'); }
+  });
+}
+
+function retryCheck() { showState('checking'); _attempts=0; startPolling(); }
+function goDashboard() { window.location.href='app.html'; }
+function goProfile() { window.location.href='profile.html'; }
+
+function animateProgressBar() {
+  const fill = document.getElementById('check-fill');
+  let p=0;
+  const iv = setInterval(()=>{
+    p = Math.min(p + (Math.random()*4), 88);
+    fill.style.width = p+'%';
+    if (p>=88) clearInterval(iv);
+  }, 400);
+}
+
+function spawnParticles() {
+  const c = document.getElementById('particles');
+  const colors = ['#C8F04A','#3AFFD4','#FFB830','rgba(200,240,74,.3)'];
+  for (let i=0;i<18;i++) {
+    const el = document.createElement('div');
+    el.className='particle';
+    const size = 4+Math.random()*6;
+    el.style.cssText=`width:${size}px;height:${size}px;left:${Math.random()*100}%;background:${colors[Math.floor(Math.random()*colors.length)]};opacity:${.2+Math.random()*.3};animation-duration:${6+Math.random()*8}s;animation-delay:${Math.random()*6}s`;
+    c.appendChild(el);
+  }
+}
+
+function spawnConfetti() {
+  const c = document.getElementById('particles');
+  const shapes = ['◆','★','●','■'];
+  for (let i=0;i<30;i++) {
+    const el = document.createElement('div');
+    el.style.cssText=`position:absolute;left:${20+Math.random()*60}%;top:${Math.random()*40}%;font-size:${10+Math.random()*12}px;animation:fall ${1+Math.random()*2}s ease-out forwards;animation-delay:${Math.random()*.5}s;color:#C8F04A;opacity:${.5+Math.random()*.5}`;
+    el.textContent=shapes[Math.floor(Math.random()*shapes.length)];
+    c.appendChild(el);
+    setTimeout(()=>el.remove(), 3000);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

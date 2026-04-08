@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Chamber · Pricing</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0A0A08;--bg2:#111110;--bg3:#1A1A18;--bg4:#222220;--border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.13);--text:#F0EEE6;--text2:#8A8880;--text3:#555450;--accent:#C8F04A;--red:#FF5C3A;--amber:#FFB830;--teal:#3AFFD4;--fd:'Syne',sans-serif;--fm:'DM Mono',monospace;--fs:'Instrument Serif',serif}
+body{background:var(--bg);color:var(--text);font-family:var(--fd);-webkit-font-smoothing:antialiased}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:2px}
+
+/* NAV */
+.nav{padding:18px 48px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);position:sticky;top:0;background:rgba(10,10,8,.9);backdrop-filter:blur(20px);z-index:100}
+.logo{font-size:17px;font-weight:800;display:flex;align-items:center;gap:8px;text-decoration:none;color:var(--text)}
+.logo-mark{width:26px;height:26px;background:var(--accent);border-radius:5px;display:flex;align-items:center;justify-content:center}
+.logo em{color:var(--accent);font-style:normal}
+.btn{font-family:var(--fd);font-size:13px;font-weight:600;padding:9px 18px;border-radius:8px;border:none;cursor:pointer;transition:all .2s}
+.btn-g{background:transparent;color:var(--text2);border:1px solid var(--border2)}
+.btn-g:hover{color:var(--text);border-color:rgba(255,255,255,.22);background:var(--bg3)}
+.btn-p{background:var(--accent);color:#0A0A08}
+.btn-p:hover{background:#A8D030;transform:translateY(-1px)}
+
+/* HERO */
+.hero{padding:80px 48px 60px;text-align:center;position:relative;overflow:hidden}
+.hero-glow{position:absolute;top:0;left:50%;transform:translateX(-50%);width:600px;height:400px;background:radial-gradient(ellipse,rgba(200,240,74,.07),transparent 70%);pointer-events:none}
+.hero-lbl{font-size:11px;font-family:var(--fm);color:var(--accent);letter-spacing:.12em;text-transform:uppercase;margin-bottom:16px}
+.hero-title{font-size:clamp(42px,6vw,72px);font-weight:800;letter-spacing:-3px;line-height:.95;margin-bottom:18px}
+.hero-title em{font-family:var(--fs);font-style:italic;font-weight:400;color:var(--accent)}
+.hero-sub{font-size:18px;color:var(--text2);max-width:520px;margin:0 auto 40px;line-height:1.65}
+
+/* BILLING TOGGLE */
+.toggle-wrap{display:inline-flex;align-items:center;gap:14px;background:var(--bg2);border:1px solid var(--border);border-radius:100px;padding:6px 20px 6px 6px;margin-bottom:60px}
+.toggle-opt{font-size:13px;font-weight:600;cursor:pointer;padding:7px 16px;border-radius:100px;transition:all .2s;color:var(--text2)}
+.toggle-opt.act{background:var(--bg4);color:var(--text)}
+.toggle-badge{font-size:10px;font-family:var(--fm);background:rgba(200,240,74,.15);color:var(--accent);padding:3px 9px;border-radius:100px;font-weight:600}
+
+/* PRICING GRID */
+.pricing-wrap{max-width:1100px;margin:0 auto;padding:0 48px 80px}
+.pg{display:grid;grid-template-columns:1fr 1.05fr 1fr;gap:16px;align-items:start}
+.pc{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:36px 32px;position:relative;transition:border-color .25s}
+.pc:hover{border-color:var(--border2)}
+.pc.feat{border-color:var(--accent);background:linear-gradient(160deg,rgba(200,240,74,.05),var(--bg2))}
+.pc.feat::before{content:'';position:absolute;inset:0;border-radius:16px;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(200,240,74,.04),transparent);pointer-events:none}
+.fbadge{position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:var(--accent);color:#0A0A08;font-size:11px;font-weight:700;padding:5px 18px;border-radius:100px;white-space:nowrap;letter-spacing:.04em}
+.plan-name{font-size:12px;font-weight:600;font-family:var(--fm);color:var(--text2);letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px}
+.plan-price{font-size:52px;font-weight:800;letter-spacing:-3px;margin-bottom:6px;line-height:1}
+.plan-price sup{font-size:22px;font-weight:600;letter-spacing:0;vertical-align:super;color:var(--text2)}
+.plan-price sub{font-size:14px;font-weight:400;letter-spacing:0;color:var(--text2)}
+.plan-annual{font-size:12px;font-family:var(--fm);color:var(--text3);margin-bottom:6px;height:16px}
+.plan-desc{font-size:14px;color:var(--text2);margin-bottom:28px;line-height:1.55;min-height:42px}
+.plan-cta{width:100%;padding:13px;font-size:14px;font-weight:700;font-family:var(--fd);border-radius:10px;border:none;cursor:pointer;margin-bottom:28px;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.cta-primary{background:var(--accent);color:#0A0A08}
+.cta-primary:hover{background:#A8D030;transform:translateY(-1px)}
+.cta-outline{background:transparent;color:var(--text);border:1px solid var(--border2)}
+.cta-outline:hover{border-color:var(--accent);color:var(--accent)}
+.cta-primary .spin,.cta-outline .spin{width:14px;height:14px;border:2px solid rgba(0,0,0,.2);border-top-color:#0A0A08;border-radius:50%;animation:spin .7s linear infinite;display:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading .spin{display:block}
+.loading .cta-text{display:none}
+.plan-divider{height:1px;background:var(--border);margin-bottom:24px}
+.plan-features-title{font-size:11px;font-family:var(--fm);color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:14px}
+.pfl{list-style:none;display:flex;flex-direction:column;gap:10px}
+.pfi{font-size:13px;color:var(--text2);display:flex;align-items:flex-start;gap:9px;line-height:1.5}
+.pfi::before{content:'✓';color:var(--accent);font-weight:700;flex-shrink:0;font-size:12px;margin-top:1px}
+.pfi.muted::before{content:'—';color:var(--text3)}
+.pfi.muted{color:var(--text3)}
+.pfi strong{color:var(--text);font-weight:600}
+
+/* COMPARISON TABLE */
+.comp-wrap{max-width:1100px;margin:0 auto;padding:0 48px 80px}
+.comp-title{font-size:clamp(28px,4vw,42px);font-weight:800;letter-spacing:-2px;text-align:center;margin-bottom:40px}
+.comp-table{width:100%;border-collapse:collapse;background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.comp-table th{padding:18px 24px;text-align:left;font-size:11px;font-family:var(--fm);color:var(--text3);letter-spacing:.08em;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:400}
+.comp-table th:not(:first-child){text-align:center}
+.comp-table td{padding:14px 24px;border-bottom:1px solid rgba(255,255,255,.04);font-size:13px;vertical-align:middle}
+.comp-table tr:last-child td{border-bottom:none}
+.comp-table td:not(:first-child){text-align:center}
+.comp-table tr:hover td{background:rgba(255,255,255,.015)}
+.comp-section-row td{background:rgba(200,240,74,.02);font-size:10px;font-family:var(--fm);color:var(--accent);letter-spacing:.1em;text-transform:uppercase;padding:10px 24px}
+.check{color:var(--accent);font-size:16px}
+.cross{color:var(--text3);font-size:16px}
+.feat-col{color:var(--text2)}
+.feat-col strong{color:var(--text);font-weight:600;display:block}
+.feat-col small{color:var(--text3);font-size:11px;font-family:var(--fm)}
+.plan-header{font-weight:800;font-size:14px;color:var(--text)}
+.plan-header.h-feat{color:var(--accent)}
+.badge-sm{font-size:10px;font-family:var(--fm);background:var(--adim,rgba(200,240,74,.08));color:var(--accent);padding:2px 7px;border-radius:100px;margin-left:6px}
+
+/* FAQ */
+.faq-wrap{max-width:700px;margin:0 auto;padding:0 48px 100px}
+.faq-title{font-size:clamp(28px,4vw,42px);font-weight:800;letter-spacing:-2px;text-align:center;margin-bottom:40px}
+.faq-item{border-bottom:1px solid var(--border);padding:20px 0;cursor:pointer}
+.faq-q{font-size:16px;font-weight:600;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.faq-icon{font-size:20px;color:var(--text3);transition:transform .2s;flex-shrink:0}
+.faq-item.open .faq-icon{transform:rotate(45deg);color:var(--accent)}
+.faq-a{font-size:14px;color:var(--text2);line-height:1.7;margin-top:12px;display:none}
+.faq-item.open .faq-a{display:block}
+
+/* CURRENT PLAN BANNER */
+.current-plan-banner{background:rgba(200,240,74,.06);border:1px solid rgba(200,240,74,.2);border-radius:10px;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;margin-bottom:32px;font-size:13px;display:none}
+.cpb-left{display:flex;align-items:center;gap:10px}
+.cpb-dot{width:8px;height:8px;border-radius:50%;background:var(--accent)}
+.cpb-text strong{color:var(--accent)}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:13px 18px;font-size:13px;z-index:999;animation:slideIn .3s ease;max-width:320px;display:none}
+.toast.err{border-color:rgba(255,92,58,.3);color:var(--red)}
+.toast.ok{border-color:rgba(200,240,74,.3);color:var(--accent)}
+@keyframes slideIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+@media(max-width:768px){.pg{grid-template-columns:1fr}.pricing-wrap{padding:0 20px 60px}.comp-wrap,.faq-wrap{padding:0 20px 60px}.nav{padding:16px 20px}}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="index.html" class="logo">
+    <div class="logo-mark"><svg viewBox="0 0 16 16" fill="none" width="12" height="12"><polygon points="8,1 15,5 15,11 8,15 1,11 1,5" fill="#0A0A08"/></svg></div>
+    Chamber<em>.</em>
+  </a>
+  <div style="display:flex;gap:10px">
+    <button class="btn btn-g" onclick="goToApp()">Dashboard</button>
+    <button class="btn btn-p" id="auth-nav-btn" onclick="window.location.href='auth.html'">Sign in</button>
+  </div>
+</nav>
+
+<!-- CURRENT PLAN BANNER -->
+<div style="max-width:1100px;margin:24px auto 0;padding:0 48px">
+  <div class="current-plan-banner" id="current-plan-banner">
+    <div class="cpb-left">
+      <div class="cpb-dot"></div>
+      <span>Your current plan: <strong id="current-plan-name">Free</strong></span>
+    </div>
+    <button class="btn btn-g" style="font-size:12px;padding:7px 14px" onclick="manageBilling()">Manage billing →</button>
+  </div>
+</div>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-glow"></div>
+  <div class="hero-lbl">Pricing</div>
+  <h1 class="hero-title">Replace a $2k/mo<br/><em>agency retainer</em></h1>
+  <p class="hero-sub">All plans include AI-powered analysis using GPT-4o. No feature-gating on core reports — just more of them.</p>
+
+  <!-- BILLING TOGGLE -->
+  <div class="toggle-wrap">
+    <div class="toggle-opt act" onclick="setBilling('monthly',this)">Monthly</div>
+    <div class="toggle-opt" onclick="setBilling('annual',this)">Annual <span class="toggle-badge">Save 20%</span></div>
+  </div>
+</div>
+
+<!-- PRICING CARDS -->
+<div class="pricing-wrap">
+  <div class="pg">
+    <!-- FREE -->
+    <div class="pc" id="card-free">
+      <div class="plan-name">Free</div>
+      <div class="plan-price"><sup></sup><span id="free-price">$0</span><sub>/mo</sub></div>
+      <div class="plan-annual" id="free-annual"></div>
+      <div class="plan-desc">For founders exploring the product. No card needed.</div>
+      <button class="plan-cta cta-outline" id="cta-free" onclick="handleCta('free')">
+        <div class="spin"></div><span class="cta-text">Start for free →</span>
+      </button>
+      <div class="plan-divider"></div>
+      <div class="plan-features-title">Included</div>
+      <ul class="pfl">
+        <li class="pfi"><strong>3 full reports</strong> per month</li>
+        <li class="pfi">Marketing angles</li>
+        <li class="pfi">Competitor overview</li>
+        <li class="pfi">Growth score</li>
+        <li class="pfi">Brand name generator</li>
+        <li class="pfi">FAQ generator</li>
+        <li class="pfi">Viral hooks</li>
+        <li class="pfi">Launch checklist</li>
+        <li class="pfi muted">Reddit sentiment</li>
+        <li class="pfi muted">Influencer matching</li>
+        <li class="pfi muted">Ad copy generator</li>
+        <li class="pfi muted">PDF export</li>
+      </ul>
+    </div>
+
+    <!-- GROWTH (featured) -->
+    <div class="pc feat" id="card-growth">
+      <div class="fbadge">Most popular</div>
+      <div class="plan-name">Growth</div>
+      <div class="plan-price"><sup>$</sup><span id="growth-price">99</span><sub>/mo</sub></div>
+      <div class="plan-annual" id="growth-annual"></div>
+      <div class="plan-desc">For DTC brands and active sellers running regular research.</div>
+      <button class="plan-cta cta-primary" id="cta-growth" onclick="handleCta('growth')">
+        <div class="spin"></div><span class="cta-text">Get started →</span>
+      </button>
+      <div class="plan-divider"></div>
+      <div class="plan-features-title">Everything in Free, plus</div>
+      <ul class="pfl">
+        <li class="pfi"><strong>25 full reports</strong> per month</li>
+        <li class="pfi">Reddit sentiment + sample posts</li>
+        <li class="pfi"><strong>5 influencer matches</strong> per report</li>
+        <li class="pfi">Ad copy generator (Facebook, TikTok, Google)</li>
+        <li class="pfi">Email sequences (5-email drip)</li>
+        <li class="pfi">SWOT analysis</li>
+        <li class="pfi">Audience persona builder</li>
+        <li class="pfi">SEO keyword research</li>
+        <li class="pfi">Go-to-market strategy</li>
+        <li class="pfi">TikTok content calendar</li>
+        <li class="pfi">Competitor ad intelligence</li>
+        <li class="pfi">A/B test ideas</li>
+        <li class="pfi">PDF export + share links</li>
+        <li class="pfi">Priority processing</li>
+      </ul>
+    </div>
+
+    <!-- SCALE -->
+    <div class="pc" id="card-scale">
+      <div class="plan-name">Scale</div>
+      <div class="plan-price"><sup>$</sup><span id="scale-price">299</span><sub>/mo</sub></div>
+      <div class="plan-annual" id="scale-annual"></div>
+      <div class="plan-desc">For agencies managing multiple brands and power users.</div>
+      <button class="plan-cta cta-outline" id="cta-scale" onclick="handleCta('scale')">
+        <div class="spin"></div><span class="cta-text">Get Scale →</span>
+      </button>
+      <div class="plan-divider"></div>
+      <div class="plan-features-title">Everything in Growth, plus</div>
+      <ul class="pfl">
+        <li class="pfi"><strong>Unlimited reports</strong></li>
+        <li class="pfi">White-label opportunity finder</li>
+        <li class="pfi">Product Hunt launch kit</li>
+        <li class="pfi">Full business validation</li>
+        <li class="pfi">Customer journey mapping</li>
+        <li class="pfi">12-month trend forecast</li>
+        <li class="pfi">Product roadmap generator</li>
+        <li class="pfi">Affiliate program builder</li>
+        <li class="pfi">White-label PDF export</li>
+        <li class="pfi"><strong>5 team seats</strong></li>
+        <li class="pfi">API access</li>
+        <li class="pfi">Dedicated support</li>
+        <li class="pfi">Custom integrations</li>
+      </ul>
+    </div>
+  </div>
+
+  <div style="text-align:center;margin-top:24px;font-size:13px;color:var(--text3);font-family:var(--fm)">
+    All plans include 7-day free trial · Cancel anytime · No hidden fees
+  </div>
+</div>
+
+<!-- COMPARISON TABLE -->
+<div class="comp-wrap">
+  <div class="comp-title">Full feature comparison</div>
+  <table class="comp-table">
+    <thead>
+      <tr>
+        <th style="width:45%">Feature</th>
+        <th><span class="plan-header">Free</span></th>
+        <th><span class="plan-header h-feat">Growth</span> <span class="badge-sm">Popular</span></th>
+        <th><span class="plan-header">Scale</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="comp-section-row"><td colspan="4">Reports & Analysis</td></tr>
+      <tr><td class="feat-col"><strong>Full product analysis</strong><br/><small>Marketing angles, score, competitors</small></td><td>3/mo</td><td>25/mo</td><td>Unlimited</td></tr>
+      <tr><td class="feat-col"><strong>Reddit sentiment scanner</strong><br/><small>Real community opinions</small></td><td class="cross">—</td><td class="check">✓</td><td class="check">✓</td></tr>
+      <tr><td class="feat-col"><strong>Influencer matching</strong><br/><small>5 creators per report</small></td><td class="cross">—</td><td class="check">✓</td><td class="check">✓</td></tr>
+      <tr><td class="feat-col"><strong>Competitor analysis</strong></td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+      <tr><td class="feat-col"><strong>SEO keyword research</strong></td><td class="cross">—</td><td class="check">✓</td><td class="check">✓</td></tr>
+      <tr><td class="feat-col"><strong>Market size estimator</strong></td><td class="cross">—</td><td class="check">✓</td><td class="check">✓</td></tr>
+      <tr class="comp-section-row"><td colspan="4">Content & Marketing Tools</td></tr>
+      <tr><td class="feat-col"><strong>Ad copy generator</strong><br/><small>Facebook, TikTok, Google</small></td><td class="cross">—</td><td class="check">✓</td><td class="check">✓</td></tr>
+      <tr><td class="feat-col"><strong>Email sequence builder</strong><br/><small>5-email welcome + nurture flows</small></td><td class="cross">—</td><td class="check">✓</td><td class="check">✓</td></tr>
+      <tr><td class="feat-col"><strong>Viral hook generator</strong></td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+      <tr><td class="feat-col"><strong>Product descriptions</strong><br/><small>Amazon, Shopify, DTC optimized</small></td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+      <tr><td class="feat-col"><strong>Instagram caption pack</strong></td><td class="cross">—</td><td class="check">✓</td><td class="check">✓</td></tr>
+      <tr><td class="feat-col"><strong>TikTok 30-day calendar</strong></td><td class="cross">—</td><td class="check">✓</td><td class="check">✓</td></tr>
+      <tr><td class="feat-col"><strong>UGC creator brief</strong></td><td class="cross">—</td><td class="check">✓</td><td class="check">✓</td></tr>
+      <tr><td class="feat-col"><strong>Landing page copy</strong></td><td class="cross">—</td><td class="check">✓</td><td class="check">✓</td></tr>
+      <tr class="comp-section-row"><td colspan="4">Strategy & Planning</td></tr>
+      <tr><td class="feat-col"><strong>SWOT analysis</strong></td><td class="cross">—</td><td class="check">✓</td><td class="check">✓</td></tr>
+      <tr><td class="feat-col"><strong>Audience persona builder</strong></td><td class="cross">—</td><td class="check">✓</td><td class="check">✓</td></tr>
+      <tr><td class="feat-col"><strong>Go-to-market strategy</strong></td><td class="cross">—</td><td class="check">✓</td><td class="check">✓</td></tr>
+      <tr><td class="feat-col"><strong>Pricing strategy</strong></td><td class="cross">—</td><td class="check">✓</td><td class="check">✓</td></tr>
+      <tr><td class="feat-col"><strong>A/B test idea generator</strong></td><td class="cross">—</td><td class="check">✓</td><td class="check">✓</td></tr>
+      <tr><td class="feat-col"><strong>Product roadmap generator</strong></td><td class="cross">—</td><td class="cross">—</td><td class="check">✓</td></tr>
+      <tr><td class="feat-col"><strong>Full business validation</strong></td><td class="cross">—</td><td class="cross">—</td><td class="check">✓</td></tr>
+      <tr><td class="feat-col"><strong>White-label opportunity finder</strong></td><td class="cross">—</td><td class="cross">—</td><td class="check">✓</td></tr>
+      <tr class="comp-section-row"><td colspan="4">Export & Sharing</td></tr>
+      <tr><td class="feat-col"><strong>PDF export</strong></td><td class="cross">—</td><td class="check">✓</td><td class="check">✓</td></tr>
+      <tr><td class="feat-col"><strong>Share links</strong></td><td class="cross">—</td><td class="check">✓</td><td class="check">✓</td></tr>
+      <tr><td class="feat-col"><strong>White-label PDF</strong></td><td class="cross">—</td><td class="cross">—</td><td class="check">✓</td></tr>
+      <tr><td class="feat-col"><strong>API access</strong></td><td class="cross">—</td><td class="cross">—</td><td class="check">✓</td></tr>
+      <tr class="comp-section-row"><td colspan="4">Account</td></tr>
+      <tr><td class="feat-col"><strong>Team seats</strong></td><td>1</td><td>1</td><td>5</td></tr>
+      <tr><td class="feat-col"><strong>Support</strong></td><td>Email</td><td>Priority email</td><td>Dedicated</td></tr>
+      <tr><td class="feat-col"><strong>Processing speed</strong></td><td>Standard</td><td>Priority</td><td>Priority</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- FAQ -->
+<div class="faq-wrap">
+  <div class="faq-title">Questions</div>
+  <div id="faqs"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let SUPABASE_URL = '', SUPABASE_ANON_KEY = '';
+const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:3001' : 'https://your-api.com';
+(async () => {
+  const cfg = await fetch(API_BASE + '/api/config').then(r => r.json());
+  SUPABASE_URL = cfg.supabaseUrl;
+  SUPABASE_ANON_KEY = cfg.supabaseAnonKey;
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  // ... rest of init
+})();
+let billingMode = "monthly";
+let session = null;
+let userPlan = "free";
+
+const PRICES = {
+  monthly: { starter: 29.99, growth: 59.99, scale: 129.99 },
+  annual: { starter: 19.99, growth: 49.99, scale: 99.99 }
+};
+
+// ─── INIT ─────────────────────────────────────────────────────────
+(async () => {
+  try {
+    const stored = localStorage.getItem("chamber_session");
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      const { data: { session: s } } = await sb.auth.getSession();
+      session = s || parsed;
+    }
+    if (session?.user) {
+      document.getElementById("auth-nav-btn").textContent = "Dashboard";
+      document.getElementById("auth-nav-btn").onclick = goToApp;
+      // Fetch profile for current plan
+      const resp = await fetch(`${API_BASE}/api/auth/me`, { headers: { "Authorization": `Bearer ${session.access_token}` } });
+      if (resp.ok) {
+        const { profile } = await resp.json();
+        userPlan = profile?.plan || "free";
+        updateCurrentPlanBanner(userPlan);
+        updateCTALabels(userPlan);
+      }
+    }
+  } catch(e) {}
+  renderFAQs();
+})();
+
+function updateCurrentPlanBanner(plan) {
+  const banner = document.getElementById("current-plan-banner");
+  const planName = document.getElementById("current-plan-name");
+  if (plan && plan !== "free" && plan !== "cancelled") {
+    banner.style.display = "flex";
+    planName.textContent = plan.charAt(0).toUpperCase() + plan.slice(1);
+  }
+}
+
+function updateCTALabels(plan) {
+  const ctas = { free: document.getElementById("cta-free"), growth: document.getElementById("cta-growth"), scale: document.getElementById("cta-scale") };
+  Object.entries(ctas).forEach(([p, btn]) => {
+    if (!btn) return;
+    const textEl = btn.querySelector(".cta-text");
+    if (p === plan) { textEl.textContent = "Current plan ✓"; btn.disabled = true; btn.style.opacity = ".6"; }
+    else if (isPlanUpgrade(plan, p)) { textEl.textContent = `Upgrade to ${p.charAt(0).toUpperCase()+p.slice(1)} →`; }
+    else { textEl.textContent = `Downgrade to ${p.charAt(0).toUpperCase()+p.slice(1)}`; }
+  });
+}
+
+const planOrder = ["free","starter","growth","scale"];
+function isPlanUpgrade(current, target) { return planOrder.indexOf(target) > planOrder.indexOf(current); }
+function goToApp() { window.location.href = "app.html"; }
+
+// ─── BILLING TOGGLE ───────────────────────────────────────────────
+function setBilling(mode, el) {
+  billingMode = mode;
+  document.querySelectorAll(".toggle-opt").forEach(o => o.classList.remove("act"));
+  el.classList.add("act");
+  const prices = PRICES[mode];
+  document.getElementById("growth-price").textContent = prices.growth;
+  document.getElementById("scale-price").textContent = prices.scale;
+  document.getElementById("growth-annual").textContent = mode === "annual" ? `$${prices.growth * 12}/yr — save $${(99-prices.growth)*12}` : "";
+  document.getElementById("scale-annual").textContent = mode === "annual" ? `$${prices.scale * 12}/yr — save $${(299-prices.scale)*12}` : "";
+}
+
+// ─── HANDLE CTA CLICKS ────────────────────────────────────────────
+async function handleCta(plan) {
+  if (plan === "free") {
+    if (session?.user) return goToApp();
+    return window.location.href = "login.html";
+  }
+  if (!session?.user) {
+    localStorage.setItem("pending_plan", plan);
+    return window.location.href = "login.html";
+  }
+  if (plan === userPlan) return;
+
+  const btn = document.getElementById(`cta-${plan}`);
+  btn.classList.add("loading");
+  try {
+    const resp = await fetch(`${API_BASE}/api/stripe/create-checkout`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${session.access_token}` },
+      body: JSON.stringify({ plan: plan, billing: billingMode })
+    });
+    const data = await resp.json();
+    if (data.url) {
+      window.location.href = data.url;
+    } else if (data.error) {
+      // Stripe not configured — show demo message
+      showToast("Stripe not configured yet. Add STRIPE keys to .env to enable payments.", "err");
+    }
+  } catch(e) {
+    showToast("Something went wrong. Is the server running?", "err");
+  }
+  btn.classList.remove("loading");
+}
+
+async function manageBilling() {
+  if (!session?.user) return;
+  try {
+    const resp = await fetch(`${API_BASE}/api/stripe/portal`, { method: "POST", headers: { "Authorization": `Bearer ${session.access_token}` } });
+    const { url } = await resp.json();
+    if (url) window.location.href = url;
+    else showToast("Billing portal not set up yet.", "err");
+  } catch { showToast("Could not open billing portal.", "err"); }
+}
+
+// ─── TOAST ────────────────────────────────────────────────────────
+function showToast(msg, type = "ok") {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.className = `toast ${type}`;
+  el.style.display = "block";
+  setTimeout(() => el.style.display = "none", 5000);
+}
+
+// ─── FAQ ──────────────────────────────────────────────────────────
+const faqs = [
+  { q: "Do I need a credit card to start?", a: "No. The free plan requires no payment details. You get 3 full reports per month including marketing angles, competitor analysis, and growth score — no card needed, ever." },
+  { q: "What AI model does Chamber use?", a: "Chamber runs on GPT-4o via GitHub Models. All plans use the same model — you're not getting a cheaper model on lower tiers, just fewer monthly reports." },
+  { q: "Can I cancel anytime?", a: "Yes. Cancel any time from your billing portal with no penalties. You keep access until the end of your billing period." },
+  { q: "What counts as one report?", a: "Running a full product analysis uses 1 credit. Individual feature tools (ad copy, FAQ generator, etc.) don't count against your report limit — only full analyses do." },
+  { q: "How accurate is the Reddit sentiment?", a: "Chamber uses the real Reddit API to pull actual posts from relevant communities. The sentiment scoring is then analyzed by GPT-4o. It's real data, not simulated." },
+  { q: "Can I upgrade or downgrade at any time?", a: "Yes. Upgrades take effect immediately and you're charged the prorated difference. Downgrades take effect at the next billing cycle." },
+  { q: "Do you offer refunds?", a: "Yes — if you're unsatisfied within 7 days of subscribing, contact us for a full refund. No questions asked." },
+  { q: "Is there a limit on individual features?", a: "Individual feature calls (ad copy, email sequences, etc.) have a per-minute rate limit but no monthly cap. The monthly limit only applies to full product analyses." },
+  { q: "Can I share reports with my team?", a: "Growth and Scale plans include shareable report links. Scale plans include 5 team seats with shared dashboard access." },
+  { q: "Do you offer agency pricing?", a: "The Scale plan is designed for agencies with up to 5 brands and unlimited reports. For larger agencies, email us for custom pricing." },
+];
+
+function renderFAQs() {
+  document.getElementById("faqs").innerHTML = faqs.map((f, i) => `
+    <div class="faq-item" onclick="toggleFaq(${i})">
+      <div class="faq-q">${f.q}<div class="faq-icon">+</div></div>
+      <div class="faq-a">${f.a}</div>
+    </div>`).join("");
+}
+
+function toggleFaq(i) {
+  const items = document.querySelectorAll(".faq-item");
+  items[i].classList.toggle("open");
+}
+</script>
+</body>
+</html>

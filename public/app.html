@@ -1,0 +1,1436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Chamber — Intelligence</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Fraunces:ital,wght@0,400;0,700;1,300;1,500;1,700&display=swap" rel="stylesheet"/>
+<style>
+/* ── RESET ─────────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0A0A08;--bg2:#0f0f0d;--bg3:#161614;--bg4:#1e1e1b;--bg5:#262622;
+  --border:rgba(255,255,255,.055);--border2:rgba(255,255,255,.11);--border3:rgba(255,255,255,.18);
+  --text:#F2EFE7;--text2:#8C8A82;--text3:#545250;--text4:#333330;
+  --accent:#C8F04A;--accent2:#A8D030;--accent3:#deff6e;
+  --adim:rgba(200,240,74,.09);--adim2:rgba(200,240,74,.05);--adim3:rgba(200,240,74,.15);
+  --red:#FF5C3A;--teal:#3AFFD4;--amber:#FFB830;--blue:#4A90E2;--purple:#8B67FF;
+  --fd:'Syne',sans-serif;--fm:'DM Mono',monospace;--fs:'Fraunces',serif;
+  --r:10px;--r2:6px;
+  --sb-w:52px;--sb-wide:220px;
+}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:var(--fd);-webkit-font-smoothing:antialiased;display:flex;flex-direction:column}
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--bg5);border-radius:2px}
+::-webkit-scrollbar-thumb:hover{background:var(--border2)}
+
+/* ── AUTH LOADER ───────────────────────────────────────── */
+#boot{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:20px}
+.boot-logo{display:flex;align-items:center;gap:10px;font-size:20px;font-weight:800;letter-spacing:-.5px}
+.boot-hex{width:36px;height:36px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center;position:relative}
+.boot-hex::after{content:'';position:absolute;inset:0;border-radius:7px;background:var(--accent);animation:boot-pulse 1.5s ease-in-out infinite}
+@keyframes boot-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0;transform:scale(1.5)}}
+.boot-status{font-size:11px;font-family:var(--fm);color:var(--text3);display:flex;align-items:center;gap:8px}
+.boot-bar{width:200px;height:1px;background:var(--bg4);border-radius:1px;overflow:hidden}
+.boot-fill{height:100%;background:var(--accent);border-radius:1px;width:0;transition:width .4s ease}
+
+/* ── LAYOUT ────────────────────────────────────────────── */
+.shell{display:flex;height:100vh;overflow:hidden}
+
+/* ── ICON RAIL (collapsed sidebar) ─────────────────────── */
+.rail{width:var(--sb-w);flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;padding:12px 0;gap:2px;overflow:hidden;z-index:20}
+.rail-logo{width:32px;height:32px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-bottom:10px;flex-shrink:0;transition:all .2s}
+.rail-logo:hover{background:var(--accent3);transform:scale(1.05)}
+.rail-sep{width:24px;height:1px;background:var(--border);margin:6px 0;flex-shrink:0}
+.rail-btn{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text3);font-size:15px;transition:all .15s;border:1px solid transparent;flex-shrink:0;position:relative}
+.rail-btn:hover{background:var(--bg4);color:var(--text);border-color:var(--border)}
+.rail-btn.act{background:var(--adim);color:var(--accent);border-color:rgba(200,240,74,.2)}
+.rail-btn .tooltip{position:absolute;left:calc(100% + 10px);top:50%;transform:translateY(-50%);background:var(--bg4);border:1px solid var(--border2);border-radius:5px;padding:4px 9px;font-size:10px;font-family:var(--fm);color:var(--text);white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s;z-index:100}
+.rail-btn:hover .tooltip{opacity:1}
+.rail-spacer{flex:1}
+.rail-user{width:28px;height:28px;border-radius:50%;background:var(--adim);border:1px solid rgba(200,240,74,.25);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:var(--accent);cursor:pointer;transition:all .15s;flex-shrink:0}
+.rail-user:hover{background:var(--adim3)}
+
+/* ── PANEL (feature nav) ───────────────────────────────── */
+.panel{width:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;transition:width .25s cubic-bezier(.4,0,.2,1);flex-shrink:0}
+.panel.open{width:var(--sb-wide)}
+.panel-head{padding:14px 16px 10px;flex-shrink:0}
+.panel-search{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:7px 10px 7px 30px;font-size:12px;font-family:var(--fm);color:var(--text);outline:none;transition:border-color .2s;position:relative}
+.panel-search:focus{border-color:rgba(200,240,74,.3)}
+.panel-search::placeholder{color:var(--text3)}
+.panel-search-wrap{position:relative}
+.panel-search-icon{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:12px;pointer-events:none}
+.panel-body{flex:1;overflow-y:auto;padding:4px 8px 16px}
+.cat-label{font-size:9px;font-family:var(--fm);color:var(--text4);letter-spacing:.1em;text-transform:uppercase;padding:10px 8px 5px;margin-top:4px}
+.feat-item{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;cursor:pointer;transition:all .12s;border:1px solid transparent}
+.feat-item:hover{background:var(--bg3);border-color:var(--border)}
+.feat-item.act{background:var(--adim);border-color:rgba(200,240,74,.18)}
+.feat-item-icon{width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:12px;background:var(--bg4);flex-shrink:0}
+.feat-item.act .feat-item-icon{background:rgba(200,240,74,.15)}
+.feat-item-name{font-size:11px;font-weight:500;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.feat-item.act .feat-item-name{color:var(--accent)}
+.feat-item-plan{font-size:8px;font-family:var(--fm);font-weight:700;padding:1px 5px;border-radius:3px;flex-shrink:0}
+.fp-free{display:none}
+.fp-starter{background:rgba(138,136,128,.15);color:var(--text3)}
+.fp-growth{background:rgba(200,240,74,.12);color:var(--accent)}
+.fp-scale{background:rgba(58,255,212,.1);color:var(--teal)}
+
+/* ── MAIN ──────────────────────────────────────────────── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+
+/* ── TOPBAR ─────────────────────────────────────────────── */
+.topbar{height:48px;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:12px;flex-shrink:0;background:var(--bg)}
+.topbar-path{display:flex;align-items:center;gap:5px;font-size:12px;font-family:var(--fm);color:var(--text3);min-width:0}
+.topbar-path span{color:var(--text2)}
+.topbar-path .sep{color:var(--text4)}
+.topbar-spacer{flex:1}
+.topbar-pill{font-size:10px;font-family:var(--fm);font-weight:700;padding:3px 9px;border-radius:100px;letter-spacing:.04em}
+.pill-free{background:rgba(255,255,255,.06);color:var(--text3)}
+.pill-starter{background:rgba(138,136,128,.18);color:var(--text2)}
+.pill-growth{background:var(--adim);color:var(--accent)}
+.pill-scale{background:rgba(58,255,212,.1);color:var(--teal)}
+.tb-action{font-size:11px;font-family:var(--fm);font-weight:600;padding:5px 11px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;transition:all .15s;white-space:nowrap}
+.tb-action:hover{color:var(--text);background:var(--bg3);border-color:var(--border3)}
+.tb-action.primary{background:var(--accent);color:#0A0A08;border-color:var(--accent)}
+.tb-action.primary:hover{background:var(--accent2)}
+.usage-mini{display:flex;align-items:center;gap:6px;font-size:10px;font-family:var(--fm);color:var(--text3)}
+.usage-track{width:48px;height:3px;background:var(--bg5);border-radius:2px;overflow:hidden}
+.usage-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .5s}
+
+/* ── WORKSPACE ──────────────────────────────────────────── */
+.workspace{flex:1;display:grid;grid-template-columns:1fr 400px;overflow:hidden}
+
+/* ── INPUT PANE ─────────────────────────────────────────── */
+.input-pane{display:flex;flex-direction:column;overflow:hidden;border-right:1px solid var(--border)}
+.pane-top{padding:20px 24px 0;flex-shrink:0}
+
+/* FEATURE HERO */
+.feat-hero{margin-bottom:16px}
+.feat-hero-row{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.feat-hero-icon{width:40px;height:40px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;background:var(--bg3);border:1px solid var(--border2)}
+.feat-hero-title{font-size:18px;font-weight:800;letter-spacing:-.4px}
+.feat-hero-sub{font-size:12px;color:var(--text2);line-height:1.65;max-width:520px}
+.feat-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.ftag{font-size:10px;font-family:var(--fm);padding:2px 8px;border-radius:4px;border:1px solid var(--border);color:var(--text3)}
+.ftag.plan{background:var(--adim);border-color:rgba(200,240,74,.2);color:var(--accent)}
+
+/* HOW TO BOX */
+.how-to{background:rgba(58,255,212,.03);border:1px solid rgba(58,255,212,.1);border-left:2px solid var(--teal);border-radius:0 6px 6px 0;padding:10px 14px;font-size:11px;font-family:var(--fm);color:rgba(58,255,212,.7);line-height:1.7;margin-bottom:16px}
+
+/* FORM */
+.form-wrap{padding:0 24px 24px;overflow-y:auto;flex:1}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:9px;font-family:var(--fm);color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:5px}
+.field input,.field select,.field textarea{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:9px 12px;font-size:13px;font-family:var(--fd);color:var(--text);outline:none;transition:all .2s}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:rgba(200,240,74,.4);background:var(--bg4);box-shadow:0 0 0 3px rgba(200,240,74,.06)}
+.field input::placeholder,.field textarea::placeholder{color:var(--text4)}
+.field select{cursor:pointer}
+.field select option{background:var(--bg3)}
+.field textarea{resize:vertical;min-height:72px}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* RUN BUTTON */
+.run{width:100%;background:var(--accent);color:#0A0A08;font-family:var(--fd);font-size:13px;font-weight:700;padding:12px 20px;border-radius:7px;border:none;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;letter-spacing:.02em;margin-top:4px}
+.run:hover{background:var(--accent3);transform:translateY(-1px);box-shadow:0 6px 20px rgba(200,240,74,.2)}
+.run:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none}
+.run.busy{background:var(--bg4);color:var(--text2);border:1px solid var(--border)}
+.spin{width:13px;height:13px;border:2px solid rgba(0,0,0,.15);border-top-color:#0A0A08;border-radius:50%;animation:sp .5s linear infinite}
+.spin-l{border-color:rgba(255,255,255,.1);border-top-color:var(--accent)}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* LOCKED */
+.locked{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:32px 24px;text-align:center;margin-top:8px}
+.locked-icon{font-size:32px;margin-bottom:12px;filter:grayscale(1);opacity:.4}
+.locked h3{font-size:14px;font-weight:700;margin-bottom:6px}
+.locked p{font-size:12px;color:var(--text2);line-height:1.65;margin-bottom:16px;max-width:280px;margin-left:auto;margin-right:auto}
+.unlock-btn{background:var(--accent);color:#0A0A08;font-family:var(--fd);font-size:12px;font-weight:700;padding:9px 20px;border-radius:6px;border:none;cursor:pointer;transition:all .2s}
+.unlock-btn:hover{background:var(--accent3)}
+
+/* ── OUTPUT PANE ─────────────────────────────────────────── */
+.output-pane{background:var(--bg2);display:flex;flex-direction:column;overflow:hidden}
+.output-head{height:48px;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:8px;flex-shrink:0}
+.output-title{font-size:11px;font-weight:700;font-family:var(--fm);color:var(--text2);flex:1}
+.out-btn{font-size:10px;font-family:var(--fm);padding:3px 9px;border-radius:4px;border:1px solid var(--border2);background:transparent;color:var(--text3);cursor:pointer;transition:all .12s}
+.out-btn:hover{color:var(--text);border-color:var(--border3)}
+.output-body{flex:1;overflow-y:auto;padding:16px}
+
+/* EMPTY STATE */
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;text-align:center;padding:40px}
+.empty-ring{width:64px;height:64px;border-radius:50%;border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:24px;position:relative;margin-bottom:4px}
+.empty-ring::before{content:'';position:absolute;inset:-4px;border-radius:50%;border:1px dashed var(--border)}
+.empty h3{font-size:14px;font-weight:700;color:var(--text2)}
+.empty p{font-size:12px;font-family:var(--fm);color:var(--text3);max-width:220px;line-height:1.65}
+
+/* LOADING STATE */
+.loading-lines{display:flex;flex-direction:column;gap:10px;padding:4px}
+.ll{height:12px;background:linear-gradient(90deg,var(--bg4) 25%,var(--bg5) 50%,var(--bg4) 75%);background-size:200% 100%;border-radius:4px;animation:shimmer 1.4s ease-in-out infinite}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* RESULT BLOCKS */
+.r-block{margin-bottom:14px}
+.r-block-head{display:flex;align-items:center;gap:7px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.r-block-label{font-size:9px;font-family:var(--fm);color:var(--text3);letter-spacing:.1em;text-transform:uppercase;flex:1}
+.r-block-copy{font-size:9px;font-family:var(--fm);padding:2px 7px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--text3);cursor:pointer;transition:all .12s}
+.r-block-copy:hover{color:var(--accent);border-color:rgba(200,240,74,.3)}
+
+.r-card{background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:11px 13px;margin-bottom:7px;transition:border-color .15s}
+.r-card:hover{border-color:var(--border2)}
+.r-card-title{font-size:12px;font-weight:700;margin-bottom:3px;letter-spacing:-.2px}
+.r-card-body{font-size:11px;color:var(--text2);line-height:1.65}
+.r-kv{display:flex;justify-content:space-between;align-items:flex-start;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:11px;gap:8px}
+.r-kv:last-child{border-bottom:none}
+.r-k{color:var(--text3);font-family:var(--fm);flex-shrink:0}
+.r-v{color:var(--text);font-weight:600;text-align:right;max-width:65%}
+.r-v.ok{color:var(--accent)}
+.r-v.warn{color:var(--amber)}
+.r-v.bad{color:var(--red)}
+.r-tag{display:inline-flex;background:var(--bg4);border:1px solid var(--border);border-radius:4px;padding:3px 8px;font-size:10px;font-family:var(--fm);color:var(--text2);margin:2px}
+.r-tag.hl{background:var(--adim);border-color:rgba(200,240,74,.2);color:var(--accent)}
+.r-list li{display:flex;gap:7px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:11px;color:var(--text2);list-style:none;line-height:1.55}
+.r-list li:last-child{border-bottom:none}
+.r-list li::before{content:'→';color:var(--accent);flex-shrink:0;margin-top:1px;font-size:10px}
+.r-bar-wrap{margin:3px 0 6px}
+.r-bar-row{display:flex;justify-content:space-between;font-size:10px;font-family:var(--fm);margin-bottom:3px;color:var(--text3)}
+.r-bar-track{height:3px;background:var(--bg5);border-radius:2px;overflow:hidden}
+.r-bar-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--teal),var(--accent));transition:width .8s ease}
+
+/* SCORE DISPLAY */
+.score-hero{background:linear-gradient(135deg,rgba(200,240,74,.07),rgba(58,255,212,.04));border:1px solid rgba(200,240,74,.15);border-radius:9px;padding:16px 18px;margin-bottom:14px;display:flex;align-items:center;gap:16px}
+.score-num{font-size:52px;font-weight:800;letter-spacing:-3px;line-height:1;font-family:var(--fs)}
+.score-sub{font-size:10px;font-family:var(--fm);color:var(--text3);margin-top:2px}
+.score-name{font-size:15px;font-weight:800;letter-spacing:-.3px;margin-bottom:2px}
+.score-cat{font-size:10px;font-family:var(--fm);color:var(--text3)}
+
+/* CALC RESULT */
+.calc-hero{background:var(--bg3);border:1px solid var(--border);border-radius:9px;padding:16px 18px;text-align:center;margin-bottom:12px}
+.calc-num{font-size:42px;font-weight:800;letter-spacing:-2px;font-family:var(--fs)}
+.calc-label{font-size:10px;font-family:var(--fm);color:var(--text3);margin-top:3px}
+
+/* TOAST */
+#toast{position:fixed;bottom:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:7px;pointer-events:none}
+.toast-item{background:var(--bg4);border:1px solid var(--border2);border-radius:7px;padding:10px 14px;font-size:12px;display:flex;align-items:center;gap:8px;transform:translateX(120%);opacity:0;transition:all .3s cubic-bezier(.34,1.56,.64,1);pointer-events:auto;max-width:300px;word-break:break-word}
+.toast-item.show{transform:translateX(0);opacity:1}
+.toast-item.ok{border-color:rgba(200,240,74,.25);color:var(--accent)}
+.toast-item.err{border-color:rgba(255,92,58,.25);color:var(--red)}
+.toast-item.info{border-color:rgba(58,255,212,.2);color:var(--teal)}
+
+/* ── HOME SCREEN ──────────────────────────────────────── */
+.home{padding:28px 24px;overflow-y:auto;flex:1}
+.home-greeting{font-size:24px;font-weight:800;letter-spacing:-.6px;margin-bottom:4px}
+.home-greeting em{font-family:var(--fs);font-style:italic;font-weight:400;color:var(--accent)}
+.home-sub{font-size:13px;color:var(--text2);margin-bottom:28px}
+.home-quick{margin-bottom:24px}
+.home-sec-label{font-size:9px;font-family:var(--fm);color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.home-sec-label::before{content:'';width:12px;height:1px;background:var(--text4)}
+.quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.quick-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px;cursor:pointer;transition:all .15s;position:relative;overflow:hidden}
+.quick-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,var(--accent),transparent);opacity:0;transition:opacity .2s}
+.quick-card:hover{border-color:var(--border2);background:var(--bg4)}
+.quick-card:hover::before{opacity:1}
+.qc-icon{font-size:18px;margin-bottom:8px}
+.qc-name{font-size:12px;font-weight:700;margin-bottom:2px}
+.qc-desc{font-size:10px;font-family:var(--fm);color:var(--text3);line-height:1.55}
+.qc-plan{position:absolute;top:10px;right:10px;font-size:8px;font-family:var(--fm);font-weight:700;padding:2px 6px;border-radius:3px}
+
+/* RECENT REPORTS */
+.recent-row{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;margin-bottom:6px;cursor:pointer;transition:all .15s}
+.recent-row:hover{border-color:var(--border2);background:var(--bg4)}
+.recent-score{font-size:18px;font-weight:800;min-width:36px;text-align:center;font-family:var(--fs)}
+.recent-name{font-size:12px;font-weight:600;margin-bottom:1px}
+.recent-meta{font-size:10px;font-family:var(--fm);color:var(--text3)}
+.recent-ago{margin-left:auto;font-size:10px;font-family:var(--fm);color:var(--text4)}
+.recent-del{width:24px;height:24px;border-radius:4px;border:1px solid transparent;background:transparent;color:var(--text4);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;transition:all .12s;flex-shrink:0}
+.recent-del:hover{border-color:rgba(255,92,58,.3);color:var(--red);background:rgba(255,92,58,.06)}
+
+/* ── CMD PALETTE ─────────────────────────────────────── */
+#cmd{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);z-index:1000;display:none;align-items:flex-start;justify-content:center;padding-top:12vh}
+#cmd.open{display:flex}
+.cmd-box{width:560px;background:var(--bg3);border:1px solid var(--border2);border-radius:12px;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,.6)}
+.cmd-input-wrap{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--border)}
+.cmd-icon{color:var(--text3);font-size:14px;flex-shrink:0}
+.cmd-input{flex:1;background:transparent;border:none;font-size:14px;font-family:var(--fd);color:var(--text);outline:none}
+.cmd-input::placeholder{color:var(--text3)}
+.cmd-kbd{font-size:9px;font-family:var(--fm);background:var(--bg4);border:1px solid var(--border2);border-radius:3px;padding:2px 6px;color:var(--text3)}
+.cmd-list{max-height:360px;overflow-y:auto;padding:6px}
+.cmd-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:6px;cursor:pointer;transition:background .1s}
+.cmd-item:hover,.cmd-item.sel{background:var(--bg4)}
+.cmd-item.sel{background:var(--adim)}
+.cmd-item-icon{width:28px;height:28px;border-radius:6px;background:var(--bg5);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.cmd-item.sel .cmd-item-icon{background:rgba(200,240,74,.15)}
+.cmd-item-name{font-size:12px;font-weight:600;flex:1;color:var(--text2)}
+.cmd-item.sel .cmd-item-name{color:var(--text)}
+.cmd-item-cat{font-size:9px;font-family:var(--fm);color:var(--text3)}
+.cmd-footer{padding:8px 14px;border-top:1px solid var(--border);display:flex;align-items:center;gap:12px;font-size:10px;font-family:var(--fm);color:var(--text3)}
+.cmd-footer kbd{background:var(--bg4);border:1px solid var(--border);border-radius:3px;padding:1px 5px;font-family:var(--fm);font-size:9px;color:var(--text2)}
+
+/* ── HISTORY PANEL ───────────────────────────────────── */
+.hist-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:400;display:none}
+.hist-overlay.open{display:block}
+.hist-drawer{position:fixed;right:0;top:0;bottom:0;width:320px;background:var(--bg2);border-left:1px solid var(--border);z-index:401;transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column}
+.hist-drawer.open{transform:translateX(0)}
+.hist-head{padding:16px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.hist-title{font-size:13px;font-weight:700}
+.hist-close{width:28px;height:28px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;transition:all .12s}
+.hist-close:hover{background:var(--bg3);color:var(--text)}
+.hist-body{flex:1;overflow-y:auto;padding:10px}
+.hist-empty{padding:40px;text-align:center;color:var(--text3);font-size:12px;font-family:var(--fm)}
+
+/* ── SETTINGS PANEL ──────────────────────────────────── */
+.settings-wrap{padding:24px;overflow-y:auto;flex:1}
+.s-section{background:var(--bg3);border:1px solid var(--border);border-radius:8px;margin-bottom:12px;overflow:hidden}
+.s-sec-head{padding:12px 16px;border-bottom:1px solid var(--border);font-size:11px;font-weight:700;display:flex;align-items:center;gap:7px}
+.s-sec-body{padding:12px 16px}
+.s-kv{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px}
+.s-kv:last-child{border-bottom:none}
+.s-key{color:var(--text3);font-family:var(--fm);font-size:10px}
+.s-val{font-weight:600;color:var(--text)}
+.s-val.ok{color:var(--accent)}
+.plan-option{background:var(--bg4);border:1px solid var(--border);border-radius:7px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:all .15s}
+.plan-option:hover{border-color:var(--border2)}
+.plan-option.current{border-color:rgba(200,240,74,.25);background:rgba(200,240,74,.04)}
+.plan-price{font-size:20px;font-weight:800;letter-spacing:-1px;color:var(--accent)}
+.plan-name{font-size:12px;font-weight:700;margin-bottom:2px}
+.plan-lim{font-size:10px;font-family:var(--fm);color:var(--text3)}
+.s-actions{display:flex;gap:7px;flex-wrap:wrap}
+.s-btn{font-size:11px;font-family:var(--fd);font-weight:600;padding:7px 14px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;transition:all .15s}
+.s-btn:hover{color:var(--text);background:var(--bg3)}
+.s-btn.danger{color:var(--red);border-color:rgba(255,92,58,.25)}
+.s-btn.danger:hover{background:rgba(255,92,58,.07)}
+
+/* DOCS */
+.docs-wrap{padding:20px 24px;overflow-y:auto;flex:1}
+.docs-search{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:9px 14px;font-size:13px;font-family:var(--fd);color:var(--text);outline:none;transition:all .2s;margin-bottom:20px}
+.docs-search:focus{border-color:rgba(200,240,74,.3)}
+.docs-search::placeholder{color:var(--text3)}
+.doc-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:8px;cursor:pointer;transition:all .15s;display:flex;gap:12px;align-items:flex-start}
+.doc-card:hover{border-color:var(--border2);background:var(--bg4)}
+.doc-card-icon{width:32px;height:32px;border-radius:7px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;margin-top:1px}
+.doc-card-name{font-size:12px;font-weight:700;margin-bottom:3px}
+.doc-card-desc{font-size:11px;color:var(--text2);line-height:1.55}
+.doc-card-how{font-size:10px;font-family:var(--fm);color:var(--teal);margin-top:6px;line-height:1.6}
+.doc-card-how::before{content:'💡 '}
+.doc-sec-head{font-size:10px;font-family:var(--fm);color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin:18px 0 8px;display:flex;align-items:center;gap:6px}
+
+/* ANIM */
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.fu{animation:fadeUp .25s ease both}
+@keyframes pop{0%{transform:scale(.96)}60%{transform:scale(1.01)}100%{transform:scale(1)}}
+</style>
+</head>
+<body>
+
+<!-- BOOT SCREEN -->
+<div id="boot">
+  <div class="boot-logo">
+    <div class="boot-hex">
+      <svg viewBox="0 0 16 16" fill="none" width="13" height="13"><polygon points="8,1 15,5 15,11 8,15 1,11 1,5" fill="#0A0A08"/></svg>
+    </div>
+    Chamber<span style="color:var(--accent)">.</span>
+  </div>
+  <div class="boot-bar"><div class="boot-fill" id="boot-fill"></div></div>
+  <div class="boot-status" id="boot-status">Checking session…</div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div id="toast"></div>
+
+<!-- CMD PALETTE -->
+<div id="cmd">
+  <div class="cmd-box">
+    <div class="cmd-input-wrap">
+      <span class="cmd-icon">⌕</span>
+      <input class="cmd-input" id="cmd-input" placeholder="Search 50+ features…" autocomplete="off"/>
+      <span class="cmd-kbd">ESC</span>
+    </div>
+    <div class="cmd-list" id="cmd-list"></div>
+    <div class="cmd-footer">
+      <span><kbd>↑↓</kbd> navigate</span>
+      <span><kbd>↵</kbd> select</span>
+      <span><kbd>esc</kbd> close</span>
+    </div>
+  </div>
+</div>
+
+<!-- HISTORY DRAWER -->
+<div class="hist-overlay" id="hist-overlay" onclick="closeHistory()"></div>
+<div class="hist-drawer" id="hist-drawer">
+  <div class="hist-head">
+    <div class="hist-title">📋 Analysis History</div>
+    <button class="hist-close" onclick="closeHistory()">✕</button>
+  </div>
+  <div class="hist-body" id="hist-body"></div>
+</div>
+
+<!-- MAIN APP -->
+<div class="shell" id="shell" style="display:none">
+
+  <!-- ICON RAIL -->
+  <div class="rail">
+    <div class="rail-logo" onclick="goHome()" title="Home">
+      <svg viewBox="0 0 16 16" fill="none" width="12" height="12"><polygon points="8,1 15,5 15,11 8,15 1,11 1,5" fill="#0A0A08"/></svg>
+    </div>
+
+    <div class="rail-btn act" id="rail-analyze" onclick="setRailView('analyze')" title="⚡ New Analysis">
+      ⚡<span class="tooltip">New Analysis</span>
+    </div>
+    <div class="rail-btn" id="rail-browse" onclick="setRailView('browse')" title="Browse Features">
+      ◫<span class="tooltip">Browse Features</span>
+    </div>
+    <div class="rail-btn" id="rail-docs" onclick="showView('docs')" title="Feature Docs">
+      📚<span class="tooltip">All Features Guide</span>
+    </div>
+
+    <div class="rail-sep"></div>
+
+    <div class="rail-btn" onclick="openCmd()" title="⌘K Search">
+      ⌕<span class="tooltip">Search (⌘K)</span>
+    </div>
+    <div class="rail-btn" onclick="toggleHistory()" title="History">
+      🕐<span class="tooltip">History</span>
+    </div>
+
+    <div class="rail-sep"></div>
+    <div class="rail-btn" onclick="window.open('admin.html')" title="Admin">
+      ⬡<span class="tooltip">Admin</span>
+    </div>
+    <div class="rail-btn" onclick="window.location.href='profile.html'" title="Profile">
+      👤<span class="tooltip">Profile</span>
+    </div>
+
+    <div class="rail-spacer"></div>
+    <div class="rail-user" id="rail-user" onclick="showView('settings')" title="Settings"></div>
+  </div>
+
+  <!-- FEATURE PANEL -->
+  <div class="panel" id="feat-panel">
+    <div class="panel-head">
+      <div class="panel-search-wrap">
+        <span class="panel-search-icon">⌕</span>
+        <input class="panel-search" id="panel-search" placeholder="Filter features…" oninput="filterPanel(this.value)"/>
+      </div>
+    </div>
+    <div class="panel-body" id="panel-body"></div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-path">
+        <span id="tb-cat" style="color:var(--text3)">Core</span>
+        <span class="sep">›</span>
+        <span id="tb-name">Home</span>
+      </div>
+      <div class="topbar-spacer"></div>
+      <div class="usage-mini">
+        <div class="usage-track"><div class="usage-fill" id="usage-fill"></div></div>
+        <span id="usage-text" style="font-size:10px;font-family:var(--fm)">—/—</span>
+      </div>
+      <span class="topbar-pill pill-free" id="plan-pill">FREE</span>
+      <a href="info.html" class="tb-action" target="_blank">ℹ How To</a>
+      <button class="tb-action" onclick="toggleHistory()">History</button>
+      <button class="tb-action primary" onclick="openCmd()">⌕ Search  <span style="opacity:.5;font-size:9px">⌘K</span></button>
+    </div>
+
+    <div class="workspace" id="workspace">
+      <!-- Input pane (left) -->
+      <div class="input-pane" id="input-pane">
+        <!-- content injected -->
+      </div>
+      <!-- Output pane (right) -->
+      <div class="output-pane">
+        <div class="output-head">
+          <!-- In .output-head, after the existing out-btn buttons: -->
+<button class="out-btn" onclick="exportPDF()">⬇ PDF</button>
+          <div class="output-title" id="output-title">🧾 Results</div>
+          <button class="out-btn" onclick="copyJSON()">Copy JSON</button>
+          <button class="out-btn" onclick="copyMD()">Copy MD</button>
+        </div>
+        <div class="output-body" id="output-body">
+          <div class="empty">
+            <div class="empty-ring">🎯</div>
+            <h3>Results appear here</h3>
+            <p>Run any feature to see your AI-generated output</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end shell -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+
+// ═══════════════════════════════════════════════════════
+// ⚙️  CONFIG — change these two values
+// ═══════════════════════════════════════════════════════
+let SUPABASE_URL      = '';
+let SUPABASE_ANON_KEY = '';
+const API_BASE = window.location.hostname === 'localhost'
+  ? 'http://localhost:3001'
+  : 'https://your-api.com';
+
+// Stripe Payment Links (from dashboard.stripe.com → Payment Links)
+const STRIPE = {
+  starter: 'https://buy.stripe.com/YOUR_STARTER_LINK',
+  growth:  'https://buy.stripe.com/YOUR_GROWTH_LINK',
+  scale:   'https://buy.stripe.com/YOUR_SCALE_LINK',
+};
+
+// ═══════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════
+let _sb, _sess, _profile, _reports = [], _last = null, _activeFeature = null;
+const PLAN_ORDER  = ['free','starter','growth','scale'];
+const PLAN_LIMITS = { free:1, starter:5, growth:25, scale:999999 };
+
+// ═══════════════════════════════════════════════════════
+// FEATURES DATA
+// ═══════════════════════════════════════════════════════
+const CATS = {
+  core:    { label:'Core',           icon:'⚡' },
+  content: { label:'Content & Copy', icon:'✍️' },
+  research:{ label:'Research',       icon:'🔍' },
+  revenue: { label:'Revenue',        icon:'💰' },
+  social:  { label:'Social',         icon:'📱' },
+  launch:  { label:'Launch',         icon:'🚀' },
+  amazon:  { label:'Amazon / DTC',   icon:'📦' },
+  strategy:{ label:'Strategy',       icon:'🧠' },
+  tools:   { label:'Quick Tools',    icon:'🛠️' },
+};
+
+const FEATURES = [
+  { id:'analyze',    cat:'core',     name:'Full Analysis',          icon:'⚡', minPlan:'free',    desc:'All 6 intelligence modules simultaneously: marketing angles, competitor gaps, Reddit sentiment, influencer matches, growth score, action plan.',
+    fields:[{key:'product',label:'Product Name',type:'text',placeholder:'e.g. Wireless Earbuds Pro',req:true},{key:'url',label:'Product URL',type:'url',placeholder:'https://yourproduct.com'},{key:'audience',label:'Target Audience',type:'text',placeholder:'e.g. Remote workers 25–40'},{key:'category',label:'Category',type:'text',placeholder:'e.g. Consumer Electronics'}],
+    how:'Enter your product name. Add URL and audience for a more precise report. Takes 20–60 seconds. All external data (Reddit, web) is fetched live.' },
+
+  { id:'ad-copy',    cat:'content',  name:'Ad Copy',                icon:'🎯', minPlan:'starter', desc:'4 high-converting ads with headline, body, CTA, and hook classification.',
+    fields:[{key:'product',label:'Product',type:'text',req:true},{key:'platform',label:'Platform',type:'select',options:['Facebook','TikTok','Instagram','Google','YouTube']},{key:'audience',label:'Audience',type:'text'}],
+    how:'Hooks are classified by psychology type. Copy-paste directly into your ad manager.' },
+  { id:'email-sequence', cat:'content', name:'Email Sequence',     icon:'📧', minPlan:'starter', desc:'Complete 5-email sequence with subject, preview text, and body for any stage.',
+    fields:[{key:'product',label:'Product',type:'text',req:true},{key:'sequence_type',label:'Type',type:'select',options:['welcome','abandoned_cart','post_purchase','winback','nurture','launch']}],
+    how:'Ready to paste into Klaviyo, Mailchimp, or ConvertKit.' },
+  { id:'ig-captions', cat:'content', name:'Instagram Captions',    icon:'📸', minPlan:'starter', desc:'6 captions with hashtags, format, CTA, and best posting time.',
+    fields:[{key:'product',label:'Product',type:'text',req:true}],
+    how:'Covers 6 content pillars so you have 1 week of content ready.' },
+  { id:'product-description', cat:'content', name:'Product Description', icon:'📝', minPlan:'starter', desc:'Platform-optimized descriptions for Shopify, Amazon, or Etsy.',
+    fields:[{key:'product',label:'Product',type:'text',req:true},{key:'platform',label:'Platform',type:'select',options:['Shopify','Amazon','Etsy','WooCommerce','Website']}], how:'Tuned to each platform\'s buyer psychology and SEO.' },
+  { id:'brand-story', cat:'content', name:'Brand Story',           icon:'📖', minPlan:'free',    desc:'3 formats: About page, origin story, and elevator pitch.',
+    fields:[{key:'product',label:'Brand / Product',type:'text',req:true}], how:'Use for About pages, investor decks, and social bios.' },
+  { id:'press-release', cat:'content', name:'Press Release',       icon:'📰', minPlan:'growth',  desc:'Full press release ready to send to journalists.',
+    fields:[{key:'product',label:'Product',type:'text',req:true},{key:'company',label:'Company Name',type:'text'}], how:'Send to TechCrunch, Business Insider, or your trade press.' },
+  { id:'newsletter-content', cat:'content', name:'Newsletter',     icon:'✉️', minPlan:'starter', desc:'Full newsletter with subject, preview, sections, and CTA.',
+    fields:[{key:'product',label:'Product',type:'text',req:true}], how:'Paste into Beehiiv, Substack, or ConvertKit.' },
+  { id:'landing-page-copy', cat:'content', name:'Landing Page Copy', icon:'🖥️', minPlan:'growth', desc:'Full copy: hero, pain points, solution, features, FAQ, CTA.',
+    fields:[{key:'product',label:'Product',type:'text',req:true}], how:'Paste into Webflow, Framer, or Carrd. Handles ~90% of copywriting.' },
+
+  { id:'seo-keywords', cat:'research', name:'SEO Keywords',        icon:'🔑', minPlan:'starter', desc:'20 keywords with intent, difficulty, volume, and opportunity score.',
+    fields:[{key:'product',label:'Product / Niche',type:'text',req:true}], how:'Sort by opportunity_score to prioritize. Feed into your blog and PPC.' },
+  { id:'reddit-communities', cat:'research', name:'Reddit Communities', icon:'🔴', minPlan:'free', desc:'Top 10 subreddits with posting strategy and content types.',
+    fields:[{key:'product',label:'Product',type:'text',req:true}], how:'Read each subreddit\'s rules before posting to avoid bans.' },
+  { id:'market-size', cat:'research', name:'Market Size',          icon:'🌐', minPlan:'starter', desc:'TAM/SAM/SOM with growth rate, maturity, and entry barriers.',
+    fields:[{key:'product',label:'Product / Market',type:'text',req:true}], how:'Use for investor decks and validating whether a market is worth entering.' },
+  { id:'seasonal-trends', cat:'research', name:'Seasonal Trends',  icon:'📅', minPlan:'starter', desc:'Month-by-month demand index with prep timeline.',
+    fields:[{key:'product',label:'Product',type:'text',req:true}], how:'Use the prep timeline to stock inventory before demand peaks.' },
+  { id:'trend-forecast', cat:'research', name:'Trend Forecast',    icon:'📈', minPlan:'growth',  desc:'12-month forecast of emerging and declining trends.',
+    fields:[{key:'product',label:'Product / Category',type:'text',req:true}], how:'Run quarterly to stay ahead of market shifts.' },
+  { id:'business-validation', cat:'research', name:'Business Validator', icon:'✅', minPlan:'starter', desc:'GO/PIVOT/NO-GO verdict with viability score and risks.',
+    fields:[{key:'product',label:'Business Idea',type:'text',req:true},{key:'market',label:'Market',type:'text',placeholder:'e.g. US DTC skincare'}], how:'The verdict is blunt. Run this before investing in inventory.' },
+  { id:'competitor-ads', cat:'research', name:'Competitor Ad Intel', icon:'🕵️', minPlan:'growth', desc:'Competitor ad themes, hooks, gaps you can exploit.',
+    fields:[{key:'product',label:'Product',type:'text',req:true}], how:'The "gaps" field is where you win. These are angles competitors are ignoring.' },
+  { id:'competitive-positioning', cat:'research', name:'Positioning Map', icon:'🗺️', minPlan:'growth', desc:'2D map showing you vs competitors with whitespace.',
+    fields:[{key:'product',label:'Your Product',type:'text',req:true},{key:'competitors',label:'Competitors',type:'text',placeholder:'Brand A, Brand B…'}], how:'The whitespace field is your opportunity. No brand is there yet.' },
+
+  { id:'pricing-strategy', cat:'revenue', name:'Pricing Strategy', icon:'💲', minPlan:'growth',  desc:'Optimal price with floor/ceiling, tiers, and reasoning.',
+    fields:[{key:'product',label:'Product',type:'text',req:true},{key:'cogs',label:'COGS',type:'text',placeholder:'e.g. $12'}], how:'Enter COGS for margin-aware pricing. The reasoning explains psychological anchoring.' },
+  { id:'promo-strategy', cat:'revenue', name:'Promotion Strategy', icon:'🏷️', minPlan:'starter', desc:'Promo calendar with discount types and revenue lift.',
+    fields:[{key:'product',label:'Product',type:'text',req:true},{key:'margin',label:'Margin %',type:'text',placeholder:'e.g. 45%'}], how:'The "rules" field tells you exactly which discounts to avoid.' },
+  { id:'bundle-ideas', cat:'revenue', name:'Bundle Ideas',         icon:'🎁', minPlan:'starter', desc:'6 bundles with components, price, margin, and target buyer.',
+    fields:[{key:'product',label:'Primary Product',type:'text',req:true}], how:'Bundles increase AOV 20–40%. Add the best one to Shopify checkout immediately.' },
+  { id:'cross-sell', cat:'revenue', name:'Cross-sell / Upsell',   icon:'↗️', minPlan:'starter', desc:'Upsells and cross-sells with pitch angles.',
+    fields:[{key:'product',label:'Product',type:'text',req:true}], how:'Implement on your thank-you page and post-purchase email for instant lift.' },
+  { id:'margin-calc', cat:'revenue', name:'Margin Calculator',    icon:'🧮', minPlan:'free',    desc:'True unit economics: gross profit, margin %, break-even, LTV.',
+    fields:[{key:'selling_price',label:'Selling Price ($)',type:'number',placeholder:'49.99',req:true},{key:'cogs',label:'COGS ($)',type:'number',placeholder:'12.00',req:true},{key:'shipping',label:'Shipping ($)',type:'number',placeholder:'4.50'},{key:'platform_fee_pct',label:'Platform Fee %',type:'number',placeholder:'15'},{key:'ad_spend_pct',label:'Ad Spend %',type:'number',placeholder:'20'},{key:'returns_pct',label:'Returns %',type:'number',placeholder:'5'}],
+    how:'If gross profit is negative, you\'re losing money on every sale. Fix that first.' },
+  { id:'return-predictor', cat:'revenue', name:'Return Predictor', icon:'↩️', minPlan:'starter', desc:'Predicted return rate with mitigation and listing fixes.',
+    fields:[{key:'product',label:'Product',type:'text',req:true}], how:'High returns kill margins. Run this before scaling ad spend.' },
+  { id:'subscription-box', cat:'revenue', name:'Sub Box Opportunity', icon:'📬', minPlan:'growth', desc:'Market, pricing, curation, acquisition, and churn tactics for a sub box.',
+    fields:[{key:'niche',label:'Niche',type:'text',placeholder:'e.g. natural skincare for men',req:true}], how:'Validate before building the infrastructure.' },
+
+  { id:'viral-hooks', cat:'social', name:'Viral Hooks',           icon:'🎣', minPlan:'free',    desc:'10 hooks with psychological type and predicted CTR.',
+    fields:[{key:'product',label:'Product',type:'text',req:true},{key:'platform',label:'Platform',type:'select',options:['TikTok','Instagram Reels','YouTube Shorts','Twitter/X','LinkedIn']}],
+    how:'Use as your first 3 seconds of video or tweet opener. Test 3-4/week.' },
+  { id:'tiktok-calendar', cat:'social', name:'TikTok Calendar',   icon:'🎵', minPlan:'growth',  desc:'30-day calendar with themes, hooks, format, and hashtags.',
+    fields:[{key:'product',label:'Product',type:'text',req:true}], how:'Schedule 1 week ahead. Consistency beats virality on TikTok.' },
+  { id:'influencer-outreach', cat:'social', name:'Influencer DMs', icon:'🤝', minPlan:'starter', desc:'3 DM templates for formal, casual, and performance-based outreach.',
+    fields:[{key:'product',label:'Product',type:'text',req:true}], how:'Send 20+ DMs/day. 5–10% response rate is normal.' },
+  { id:'ugc-brief', cat:'social', name:'UGC Brief',               icon:'🎬', minPlan:'growth',  desc:'Full creator brief with dos/don\'ts, structure, and hooks.',
+    fields:[{key:'product',label:'Product',type:'text',req:true},{key:'platform',label:'Platform',type:'select',options:['TikTok','Instagram','YouTube']}],
+    how:'Send to Billo, Fiverr, or Instagram creators. The structure section is what makes great UGC.' },
+  { id:'giveaway-strategy', cat:'social', name:'Giveaway Strategy', icon:'🎉', minPlan:'starter', desc:'Mechanics, platforms, hashtag, expected reach, and nurture sequence.',
+    fields:[{key:'product',label:'Product',type:'text',req:true},{key:'budget',label:'Prize Budget',type:'text',placeholder:'e.g. $200'}],
+    how:'Run on Instagram Reels for maximum algorithmic reach.' },
+  { id:'youtube-trends', cat:'social', name:'YouTube Trends',     icon:'▶️', minPlan:'free',    desc:'Trending videos + content strategy with titles and formats.',
+    fields:[{key:'product',label:'Product',type:'text',req:true}], how:'Uses real YouTube API data. Model content after top performers.' },
+
+  { id:'gtm-strategy', cat:'launch', name:'Go-To-Market',         icon:'🗺️', minPlan:'growth',  desc:'Phased GTM with channels, tactics, KPIs, and quick wins.',
+    fields:[{key:'product',label:'Product',type:'text',req:true},{key:'budget',label:'Budget',type:'text',placeholder:'e.g. $500 or $0'},{key:'timeline',label:'Timeline',type:'text',placeholder:'e.g. 90 days'}],
+    how:'Don\'t skip to paid ads until you have organic validation.' },
+  { id:'launch-checklist', cat:'launch', name:'Launch Checklist', icon:'☑️', minPlan:'free',    desc:'Prioritized checklist by phase with High/Medium/Low tags.',
+    fields:[{key:'product',label:'Product',type:'text',req:true}], how:'Complete all High priority items before going live.' },
+  { id:'ph-launch-kit', cat:'launch', name:'Product Hunt Kit',    icon:'🏹', minPlan:'growth',  desc:'Tagline, description, first comment, and upvote strategy.',
+    fields:[{key:'product',label:'Product',type:'text',req:true}], how:'Launch Tue/Wed/Thu at midnight PST. First comment is your most important content.' },
+  { id:'beta-finder', cat:'launch', name:'Beta User Finder',      icon:'🧪', minPlan:'free',    desc:'Communities, DM scripts, incentives, and screening questions.',
+    fields:[{key:'product',label:'Product',type:'text',req:true}], how:'Target 50 beta users minimum. Offer lifetime discount for weekly feedback.' },
+  { id:'affiliate-program', cat:'launch', name:'Affiliate Program', icon:'🤑', minPlan:'growth', desc:'Commission tiers, recruit targets, outreach, and tracking tools.',
+    fields:[{key:'product',label:'Product',type:'text',req:true}], how:'Use Rewardful or PartnerStack. Start at 20–30% commission.' },
+
+  { id:'amazon-listing', cat:'amazon', name:'Amazon Listing',     icon:'📦', minPlan:'starter', desc:'Optimized title, bullets, description, and backend keywords.',
+    fields:[{key:'product',label:'Product',type:'text',req:true}], how:'Paste title and bullets directly into Seller Central.' },
+  { id:'supplier-brief', cat:'amazon', name:'Supplier Brief',     icon:'🏭', minPlan:'free',    desc:'Inquiry message, specs, red flags, and negotiation tips.',
+    fields:[{key:'product',label:'Product',type:'text',req:true}], how:'Send to 10+ Alibaba suppliers. Request samples before MOQ.' },
+  { id:'shipping-analysis', cat:'amazon', name:'Shipping Strategy', icon:'🚚', minPlan:'free', desc:'Carrier comparison and FBA vs 3PL vs self-ship analysis.',
+    fields:[{key:'product',label:'Product',type:'text',req:true}], how:'Factor in Q4 storage fees when modeling FBA.' },
+  { id:'photography-guide', cat:'amazon', name:'Photography Guide', icon:'📷', minPlan:'free', desc:'Shot list, lighting, backgrounds, props, and AI prompts.',
+    fields:[{key:'product',label:'Product',type:'text',req:true}], how:'AI prompts are for Midjourney/SDXL lifestyle shots — no photographer needed.' },
+
+  { id:'swot', cat:'strategy', name:'SWOT Analysis',              icon:'⚖️', minPlan:'starter', desc:'Strengths, weaknesses, opportunities, threats, and strategic actions.',
+    fields:[{key:'product',label:'Product / Business',type:'text',req:true}], how:'Run quarterly. The "strategic_actions" combines all 4 quadrants.' },
+  { id:'persona', cat:'strategy', name:'Buyer Personas',          icon:'👤', minPlan:'starter', desc:'2 personas with demographics, pains, goals, channels, and quote.',
+    fields:[{key:'product',label:'Product',type:'text',req:true}], how:'Use the quote in ad copy. Use the channels to decide where to advertise.' },
+  { id:'customer-journey', cat:'strategy', name:'Customer Journey', icon:'🛤️', minPlan:'growth', desc:'Full journey with touchpoints, thoughts, pain points, and opportunities.',
+    fields:[{key:'product',label:'Product',type:'text',req:true}], how:'The "opportunities" column is where your highest-ROI interventions are.' },
+  { id:'product-roadmap', cat:'strategy', name:'Product Roadmap', icon:'📍', minPlan:'growth',  desc:'12-month roadmap with quarterly themes and revenue targets.',
+    fields:[{key:'product',label:'Product',type:'text',req:true}], how:'Share with investors and co-founders. Re-run every quarter.' },
+  { id:'ab-tests', cat:'strategy', name:'A/B Test Ideas',         icon:'🔬', minPlan:'growth',  desc:'10 test ideas with hypothesis, variants, metric, and priority.',
+    fields:[{key:'product',label:'Product',type:'text',req:true},{key:'page',label:'Element',type:'select',options:['product page','checkout','ad creative','email subject','landing page']}],
+    how:'Run High priority tests first. Run each for minimum 2 weeks.' },
+  { id:'objection-handler', cat:'strategy', name:'Objection Handler', icon:'🛡️', minPlan:'starter', desc:'Top objections with reframe, proof, and guarantee language.',
+    fields:[{key:'product',label:'Product',type:'text',req:true}], how:'Add reframes to your FAQ, product description, and email sequences.' },
+  { id:'brand-names', cat:'strategy', name:'Brand Names',          icon:'✨', minPlan:'free',    desc:'10 names with meaning, domain tips, trademark risk, and score.',
+    fields:[{key:'product',label:'Product / Niche',type:'text',req:true},{key:'vibe',label:'Brand Vibe',type:'select',options:['modern','playful','luxury','scientific','earthy','bold','minimal']}],
+    how:'Check domain availability on Namecheap immediately. Good names go fast.' },
+
+  { id:'faq', cat:'tools', name:'FAQ Generator',                  icon:'❓', minPlan:'free',    desc:'12 FAQs by category (shipping, quality, returns, usage, pricing).',
+    fields:[{key:'product',label:'Product',type:'text',req:true}], how:'Add to your product page and landing page. Reduces support tickets.' },
+  { id:'review-responses', cat:'tools', name:'Review Responses',  icon:'⭐', minPlan:'free',    desc:'5 response templates for negative, neutral, and positive reviews.',
+    fields:[{key:'product',label:'Product',type:'text',req:true},{key:'type',label:'Type',type:'select',options:['negative','neutral','positive','mixed']}],
+    how:'Responding to reviews boosts conversion. Respond within 24 hours.' },
+  { id:'domain-ideas', cat:'tools', name:'Domain Ideas',          icon:'🌐', minPlan:'free',    desc:'15 domains with extension, brandability, and registration tips.',
+    fields:[{key:'product',label:'Brand / Product',type:'text',req:true}], how:'Run alongside Brand Names. Check availability on Porkbun.' },
+  { id:'white-label', cat:'tools', name:'White Label Opps',       icon:'🏷️', minPlan:'scale',   desc:'White-label and reseller opportunities across niches.',
+    fields:[{key:'product',label:'Product',type:'text',req:true}], how:'Multiplies revenue without new product development.' },
+  { id:'news-trends', cat:'tools', name:'News & Trends',          icon:'📡', minPlan:'free',    desc:'Latest news + AI trend insights. Uses live NewsAPI data.',
+    fields:[{key:'product',label:'Product / Market',type:'text',req:true}], how:'Run weekly. News cycles create organic hook opportunities.' },
+];
+
+// ═══════════════════════════════════════════════════════
+// BOOT
+// ═══════════════════════════════════════════════════════
+async function boot() {
+  const fill = document.getElementById('boot-fill');
+  const status = document.getElementById('boot-status');
+  const steps = [
+    [15, 'Checking session…'],
+    [40, 'Loading profile…'],
+    [70, 'Building workspace…'],
+    [100, 'Ready'],
+  ];
+  async function advance(pct, msg, delay=0) {
+    await new Promise(r=>setTimeout(r,delay));
+    fill.style.width = pct+'%';
+    status.textContent = msg;
+  }
+
+  await advance(15,'Checking session…');
+const cfg = await fetch(API_BASE + '/api/config').then(r => r.json());
+SUPABASE_URL      = cfg.supabaseUrl;
+SUPABASE_ANON_KEY = cfg.supabaseAnonKey;
+_sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const { data:{ session }} = await _sb.auth.getSession();
+  if (!session) { window.location.href = 'login.html'; return; }
+  _sess = session;
+
+  await advance(40,'Loading profile…',200);
+  try {
+    const me = await apiFetch('/api/auth/me');
+    _profile = me.profile || { plan:'free', reports_this_month:0 };
+  } catch { _profile = { plan:'free', reports_this_month:0 }; }
+
+  await advance(70,'Building workspace…',200);
+  buildUI();
+
+  await advance(100,'Ready',100);
+  await new Promise(r=>setTimeout(r,200));
+
+  document.getElementById('boot').style.opacity='0';
+  document.getElementById('boot').style.transition='opacity .3s';
+  setTimeout(()=>{ document.getElementById('boot').style.display='none'; },300);
+  document.getElementById('shell').style.display='flex';
+
+  loadReports();
+  _sb.auth.onAuthStateChange((_,s)=>{ if(!s) window.location.href='login.html'; });
+}
+
+// ═══════════════════════════════════════════════════════
+// BUILD UI
+// ═══════════════════════════════════════════════════════
+function buildUI() {
+  const email = _sess.user.email || '';
+  const plan  = _profile?.plan || 'free';
+  const used  = _profile?.reports_this_month || 0;
+  const limit = PLAN_LIMITS[plan];
+
+  document.getElementById('rail-user').textContent = email.slice(0,2).toUpperCase();
+  document.getElementById('plan-pill').textContent = plan.toUpperCase();
+  document.getElementById('plan-pill').className = `topbar-pill pill-${plan}`;
+  document.getElementById('usage-text').textContent = `${used}/${limit==='999999'?'∞':limit}`;
+  document.getElementById('usage-fill').style.width = Math.min((used/(limit||1))*100,100)+'%';
+
+  buildPanel();
+  buildCmdList();
+  showView('home');
+}
+
+function buildPanel() {
+  const nav = document.getElementById('panel-body');
+  const grouped = {};
+  FEATURES.forEach(f=>{ (grouped[f.cat]||(grouped[f.cat]=[])).push(f); });
+  let h='';
+  Object.entries(CATS).forEach(([k,c])=>{
+    if(!grouped[k]) return;
+    h+=`<div class="cat-label">${c.icon} ${c.label}</div>`;
+    grouped[k].forEach(f=>{
+      h+=`<div class="feat-item" id="fi-${f.id}" onclick="loadFeature('${f.id}')">
+        <div class="feat-item-icon">${f.icon}</div>
+        <div class="feat-item-name">${f.name}</div>
+        ${f.minPlan!=='free'?`<span class="feat-item-plan fp-${f.minPlan}">${f.minPlan}</span>`:''}
+      </div>`;
+    });
+  });
+  nav.innerHTML = h;
+}
+
+function filterPanel(q) {
+  const term = q.toLowerCase();
+  document.querySelectorAll('.feat-item').forEach(el=>{
+    const name = el.querySelector('.feat-item-name')?.textContent.toLowerCase()||'';
+    el.style.display = (name.includes(term)||!term) ? '' : 'none';
+  });
+  document.querySelectorAll('.cat-label').forEach(el=>{
+    const next = el.nextElementSibling;
+    el.style.display = !term ? '' : (next&&next.style.display!=='none'?'':'none');
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+// VIEWS
+// ═══════════════════════════════════════════════════════
+function showView(view) {
+  const panel = document.getElementById('feat-panel');
+  const input = document.getElementById('input-pane');
+  const ws    = document.getElementById('workspace');
+
+  document.querySelectorAll('.rail-btn').forEach(b=>b.classList.remove('act'));
+  document.getElementById('rail-analyze')?.classList?.remove('act');
+  document.getElementById('rail-browse')?.classList?.remove('act');
+  document.getElementById('rail-docs')?.classList?.remove('act');
+
+  if (view==='home') {
+    panel.classList.remove('open');
+    document.getElementById('tb-cat').textContent = '';
+    document.getElementById('tb-name').textContent = 'Home';
+    ws.style.gridTemplateColumns = '1fr';
+    document.querySelector('.output-pane').style.display = 'none';
+    input.innerHTML = '';
+    input.appendChild(buildHome());
+    input.querySelector('.home')?.classList.add('fu');
+  } else if (view==='docs') {
+    panel.classList.remove('open');
+    document.getElementById('rail-docs')?.classList.add('act');
+    document.getElementById('tb-cat').textContent = '';
+    document.getElementById('tb-name').textContent = 'All Features';
+    ws.style.gridTemplateColumns = '1fr';
+    document.querySelector('.output-pane').style.display = 'none';
+    input.innerHTML = '';
+    input.appendChild(buildDocs());
+  } else if (view==='settings') {
+    panel.classList.remove('open');
+    document.getElementById('tb-cat').textContent = '';
+    document.getElementById('tb-name').textContent = 'Settings';
+    ws.style.gridTemplateColumns = '1fr';
+    document.querySelector('.output-pane').style.display = 'none';
+    input.innerHTML = '';
+    input.appendChild(buildSettings());
+  } else if (view==='feature') {
+    ws.style.gridTemplateColumns = '1fr 400px';
+    document.querySelector('.output-pane').style.display = 'flex';
+  }
+}
+
+function setRailView(which) {
+  if (which==='analyze') {
+    document.getElementById('feat-panel').classList.remove('open');
+    document.getElementById('rail-analyze').classList.add('act');
+    loadFeature('analyze');
+  } else if (which==='browse') {
+    const p = document.getElementById('feat-panel');
+    const isOpen = p.classList.contains('open');
+    if (isOpen) { p.classList.remove('open'); document.getElementById('rail-browse').classList.remove('act'); }
+    else { p.classList.add('open'); document.getElementById('rail-browse').classList.add('act'); }
+  }
+}
+
+function goHome() {
+  document.getElementById('feat-panel').classList.remove('open');
+  document.querySelectorAll('.rail-btn').forEach(b=>b.classList.remove('act'));
+  document.getElementById('rail-analyze')?.classList.remove('act');
+  showView('home');
+}
+
+// ═══════════════════════════════════════════════════════
+// HOME SCREEN
+// ═══════════════════════════════════════════════════════
+function buildHome() {
+  const name = _profile?.display_name || _sess.user.email.split('@')[0];
+  const hour = new Date().getHours();
+  const greet = hour<12?'Good morning':hour<17?'Good afternoon':'Good evening';
+  const quickFeats = ['analyze','margin-calc','viral-hooks','brand-names','faq','seo-keywords'];
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = `<div class="home">
+    <div class="home-greeting">Good ${hour<12?'morning':hour<17?'afternoon':'evening'}, <em>${name}</em></div>
+    <div class="home-sub">What are you researching today?</div>
+    <div class="home-quick">
+      <div class="home-sec-label">Quick start</div>
+      <div class="quick-grid">
+        ${quickFeats.map(id=>{
+          const f=FEATURES.find(x=>x.id===id);
+          if(!f)return'';
+          const plan=f.minPlan!=='free'?`<span class="qc-plan fp-${f.minPlan}">${f.minPlan}</span>`:'';
+          return `<div class="quick-card" onclick="loadFeature('${id}')">
+            ${plan}
+            <div class="qc-icon">${f.icon}</div>
+            <div class="qc-name">${f.name}</div>
+            <div class="qc-desc">${f.desc.slice(0,60)}…</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+    <div id="home-recent">
+      <div class="home-sec-label">Recent analyses</div>
+      <div id="recent-list"><div style="font-size:11px;font-family:var(--fm);color:var(--text3)">Loading…</div></div>
+    </div>
+  </div>`;
+  return wrapper;
+}
+
+function renderRecentList() {
+  const el = document.getElementById('recent-list');
+  if (!el) return;
+  if (!_reports.length) { el.innerHTML = `<div style="font-size:11px;font-family:var(--fm);color:var(--text3)">No analyses yet — run your first one!</div>`; return; }
+  el.innerHTML = _reports.slice(0,6).map(r=>{
+    const sc = r.growth_score||0;
+    const c = sc>=80?'var(--accent)':sc>=60?'var(--amber)':'var(--red)';
+    return `<div class="recent-row" onclick="viewReport(${JSON.stringify(JSON.stringify(r))})">
+      <div class="recent-score" style="color:${c}">${sc||'—'}</div>
+      <div style="flex:1;min-width:0">
+        <div class="recent-name">${r.product_name||'Unnamed'}</div>
+        <div class="recent-meta">${r.product_category||''}</div>
+      </div>
+      <div class="recent-ago">${timeAgo(r.created_at)}</div>
+      <button class="recent-del" onclick="event.stopPropagation();delReport('${r.id}')">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function viewReport(serialized) {
+  const r = JSON.parse(serialized);
+  loadFeature('analyze', true);
+  setTimeout(()=>{ renderAnalysisResult(r); }, 50);
+}
+
+// ═══════════════════════════════════════════════════════
+// LOAD FEATURE
+// ═══════════════════════════════════════════════════════
+function loadFeature(id, noReset) {
+  const feat = FEATURES.find(f=>f.id===id);
+  if (!feat) return;
+  _activeFeature = id;
+
+  // Update sidebar active
+  document.querySelectorAll('.feat-item').forEach(el=>el.classList.remove('act'));
+  document.getElementById(`fi-${id}`)?.classList.add('act');
+
+  // Update breadcrumb
+  document.getElementById('tb-cat').textContent = CATS[feat.cat]?.label || feat.cat;
+  document.getElementById('tb-name').textContent = feat.name;
+  document.getElementById('rail-analyze').classList.toggle('act', id==='analyze');
+
+  showView('feature');
+
+  const input = document.getElementById('input-pane');
+  const locked = !canUse(feat.minPlan) && feat.minPlan !== 'free';
+
+  if (!noReset) setOutput(`<div class="empty"><div class="empty-ring">${feat.icon}</div><h3>Ready to run</h3><p>Fill in the fields and hit Generate</p></div>`);
+
+  let h = `<div class="pane-top">
+    <div class="feat-hero">
+      <div class="feat-hero-row">
+        <div class="feat-hero-icon">${feat.icon}</div>
+        <div class="feat-hero-title">${feat.name}</div>
+      </div>
+      <div class="feat-hero-sub">${feat.desc}</div>
+      <div class="feat-tags">
+        <span class="ftag">${CATS[feat.cat]?.label}</span>
+        ${feat.minPlan!=='free'?`<span class="ftag plan">Requires ${feat.minPlan}</span>`:'<span class="ftag" style="color:var(--teal);border-color:rgba(58,255,212,.2)">Free tier</span>'}
+      </div>
+    </div>
+    ${feat.how?`<div class="how-to">${feat.how}</div>`:''}
+  </div>
+  <div class="form-wrap">`;
+
+  if (locked) {
+    h += `<div class="locked">
+      <div class="locked-icon">${feat.icon}</div>
+      <h3>${feat.name} is locked</h3>
+      <p>Upgrade to <strong style="color:var(--accent)">${feat.minPlan}</strong> to unlock this feature and all ${feat.minPlan}+ tools.</p>
+      <button class="unlock-btn" onclick="handleUpgrade('${feat.minPlan}')">Upgrade to ${feat.minPlan} →</button>
+    </div>`;
+  } else {
+    feat.fields?.forEach((f,i)=>{
+      // Group pairs
+      const next = feat.fields[i+1];
+      if (f._grouped) return;
+      if (next && !f.req && !next.req && feat.fields.indexOf(next)===i+1) {
+        next._grouped = true;
+        h += `<div class="field-row"><div class="field"><label>${f.label}${f.req?' *':''}</label>${fieldEl(f)}</div><div class="field"><label>${next.label}${next.req?' *':''}</label>${fieldEl(next)}</div></div>`;
+      } else {
+        h += `<div class="field"><label>${f.label}${f.req?' *':''}</label>${fieldEl(f)}</div>`;
+      }
+    });
+    feat.fields?.forEach(f=>delete f._grouped);
+    h += `<button class="run" id="run-btn" onclick="runFeature('${id}')"><span>⚡</span> Generate ${feat.name}</button>`;
+  }
+
+  h += `</div>`;
+  input.innerHTML = h;
+  input.style.animation = 'none';
+  requestAnimationFrame(()=>{ input.style.animation = 'fadeUp .2s ease both'; });
+
+  // Auto-focus first input
+  setTimeout(()=>{ input.querySelector('input,select')?.focus(); }, 50);
+}
+function exportPDF() {
+  if (!_last) { showToast('Nothing to export','err'); return; }
+  sessionStorage.setItem('chamber_report', JSON.stringify(_last));
+  window.open('report.html', '_blank');
+}
+function fieldEl(f) {
+  if (f.type==='select') return `<select id="ff-${f.key}">${(f.options||[]).map(o=>`<option>${o}</option>`).join('')}</select>`;
+  if (f.type==='textarea') return `<textarea id="ff-${f.key}" placeholder="${f.placeholder||''}" rows="3"></textarea>`;
+  return `<input id="ff-${f.key}" type="${f.type||'text'}" placeholder="${f.placeholder||''}" ${f.req?'required':''}/>`;
+}
+
+// ═══════════════════════════════════════════════════════
+// RUN FEATURES
+// ═══════════════════════════════════════════════════════
+async function runFeature(id) {
+  if (id==='analyze') { await runAnalysis(); return; }
+  const feat = FEATURES.find(f=>f.id===id);
+  if (!feat) return;
+
+  const body = {};
+  let ok = true;
+  feat.fields?.forEach(f=>{
+    const el = document.getElementById(`ff-${f.key}`);
+    if (el) { body[f.key] = el.value?.trim(); if (f.req && !body[f.key]) ok=false; }
+  });
+  if (!ok) { showToast('Fill in all required fields *','err'); return; }
+
+  // Numeric coerce for margin-calc
+  if (id==='margin-calc') { ['selling_price','cogs','shipping','platform_fee_pct','ad_spend_pct','returns_pct'].forEach(k=>{ if(body[k]) body[k]=parseFloat(body[k]); }); }
+
+  const btn = document.getElementById('run-btn');
+  if (btn) { btn.disabled=true; btn.innerHTML=`<div class="spin"></div> Generating…`; btn.className='run busy'; }
+  setOutput(loadingHTML());
+
+  try {
+    const data = await apiFetch(feat.endpoint||`/api/features/${id}`, { method:'POST', body:JSON.stringify(body) });
+    _last = data;
+    renderGeneric(data, feat, id);
+    showToast(`${feat.icon} ${feat.name} ready!`,'ok');
+  } catch(e) {
+    setOutput(`<div class="empty"><div class="empty-ring" style="font-size:20px">⚠</div><h3 style="color:var(--red)">Error</h3><p style="color:var(--text3)">${e.message}</p></div>`);
+    if (e.message?.includes('plan')||e.message?.includes('upgrade')) showToast('Upgrade required for this feature','err');
+    else showToast('Error: '+e.message,'err');
+  }
+
+  if (btn) { btn.disabled=false; btn.innerHTML=`<span>⚡</span> Generate ${feat.name}`; btn.className='run'; }
+}
+
+async function runAnalysis() {
+  const product = document.getElementById('ff-product')?.value?.trim() || document.getElementById('f-product')?.value?.trim();
+  if (!product) { showToast('Enter a product name first','err'); return; }
+
+  const btn = document.getElementById('run-btn') || document.getElementById('analyze-btn');
+  if (btn) { btn.disabled=true; btn.innerHTML=`<div class="spin"></div> Analyzing…`; btn.className='run busy'; }
+  setOutput(loadingHTML('Running 6 modules: Reddit, web search, AI analysis…'));
+
+  try {
+    const data = await apiFetch('/api/analyze', {
+      method:'POST',
+      body:JSON.stringify({
+        product,
+        url:document.getElementById('ff-url')?.value||'',
+        category:document.getElementById('ff-category')?.value||'',
+        audience:document.getElementById('ff-audience')?.value||'',
+      })
+    });
+    _last = data.report;
+    _reports.unshift(data.report);
+    renderAnalysisResult(data.report);
+    showToast('⚡ Analysis complete!','ok');
+  } catch(e) {
+    setOutput(`<div class="empty"><div class="empty-ring">⚠</div><h3 style="color:var(--red)">Analysis failed</h3><p>${e.message}</p></div>`);
+    if (e.message?.includes('limit')) showToast('Monthly limit reached — upgrade your plan','err');
+    else showToast(e.message,'err');
+  }
+  if (btn) { btn.disabled=false; btn.innerHTML=`<span>⚡</span> Run Full Analysis`; btn.className='run'; }
+}
+
+// ═══════════════════════════════════════════════════════
+// RESULT RENDERERS
+// ═══════════════════════════════════════════════════════
+function renderAnalysisResult(r) {
+  if (!r) return;
+  const sc = r.growth_score||0;
+  const scoreColor = sc>=80?'var(--accent)':sc>=60?'var(--amber)':'var(--red)';
+  document.getElementById('output-title').textContent = `📊 ${r.product_name||'Analysis'}`;
+
+  let h = `<div class="fu">
+  <div class="score-hero">
+    <div class="score-num" style="color:${scoreColor}">${sc}</div>
+    <div>
+      <div class="score-name">${r.product_name||r.product||'Product'}</div>
+      <div class="score-cat">${r.category||''}</div>
+      <div class="score-sub">Growth score · out of 100</div>
+    </div>
+  </div>`;
+
+  if (r.score_breakdown) {
+    h += `<div class="r-block"><div class="r-block-head"><div class="r-block-label">📊 Score Breakdown</div></div>`;
+    Object.entries(r.score_breakdown).forEach(([k,v])=>{
+      h += `<div class="r-bar-wrap"><div class="r-bar-row"><span>${k.replace(/_/g,' ')}</span><span style="color:var(--accent)">${v}</span></div><div class="r-bar-track"><div class="r-bar-fill" style="width:${v}%"></div></div></div>`;
+    });
+    h += `</div>`;
+  }
+
+  if (r.marketing_angles?.length) {
+    h += block('🎯 Marketing Angles', r.marketing_angles.map((a,i)=>`
+      <div class="r-card">
+        <div style="font-size:9px;font-family:var(--fm);color:var(--accent);letter-spacing:.08em;margin-bottom:3px">ANGLE ${String(i+1).padStart(2,'0')}</div>
+        <div class="r-card-title">${a.title}</div>
+        <div class="r-card-body">${a.description}</div>
+        ${a.strength?`<div class="r-bar-track" style="margin-top:8px"><div class="r-bar-fill" style="width:${a.strength*20}%"></div></div>`:''}
+      </div>`).join(''));
+  }
+  if (r.competitors?.length) {
+    h += block('🔍 Competitors', r.competitors.map(c=>`
+      <div class="r-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <div class="r-card-title">${c.name}</div>
+          <span style="font-size:10px;font-family:var(--fm);color:${c.threat_level>=7?'var(--red)':c.threat_level>=4?'var(--amber)':'var(--teal)'}">⚡${c.threat_level}/10</span>
+        </div>
+        <div class="r-kv"><span class="r-k">Price</span><span class="r-v">${c.price}</span></div>
+        <div class="r-kv" style="border:none"><span class="r-k">Gap</span><span class="r-v ok">${c.weakness}</span></div>
+      </div>`).join(''));
+  }
+  if (r.reddit_sentiment) {
+    const s=r.reddit_sentiment;
+    h += block('📊 Reddit Sentiment', `<div class="r-card">
+      ${[{l:'Positive',v:s.positive,c:'var(--accent)'},{l:'Neutral',v:s.neutral,c:'var(--text3)'},{l:'Negative',v:s.negative,c:'var(--red)'}].map(b=>`
+        <div class="r-bar-wrap"><div class="r-bar-row"><span style="color:var(--text2)">${b.l}</span><span style="color:${b.c}">${b.v}%</span></div>
+        <div class="r-bar-track"><div class="r-bar-fill" style="width:${b.v}%;background:${b.c}"></div></div></div>`).join('')}
+      ${s.key_themes?.length?`<div style="margin-top:8px">${s.key_themes.map(t=>`<span class="r-tag">${t}</span>`).join('')}</div>`:''}
+      ${s.sample_posts?.slice(0,2).map(p=>`<div style="background:var(--bg4);border-left:2px solid var(--accent);border-radius:0 5px 5px 0;padding:7px 10px;margin-top:7px;font-size:10px;font-family:var(--fm);color:var(--text2)">r/${p.subreddit}: "${(p.text||'').slice(0,80)}…" ↑${p.upvotes}</div>`).join('')||''}
+    </div>`);
+  }
+  if (r.influencers?.length) {
+    h += block('🤳 Influencer Matches', r.influencers.slice(0,5).map(inf=>`
+      <div class="r-card" style="display:flex;align-items:center;gap:10px">
+        <div style="font-size:18px;flex-shrink:0">${inf.emoji||'👤'}</div>
+        <div style="flex:1;min-width:0">
+          <div class="r-card-title">${inf.handle}</div>
+          <div class="r-card-body">${inf.platform} · ${inf.followers} · ${inf.niche}</div>
+        </div>
+        <span class="r-tag hl">${inf.match_score}%</span>
+      </div>`).join(''));
+  }
+  if (r.actionable_tips?.length) {
+    h += block('💡 Action Plan', `<div class="r-card"><ul class="r-list">${r.actionable_tips.map(t=>`<li>${t}</li>`).join('')}</ul></div>`);
+  }
+  if (r.summary) {
+    h += block('📋 Summary', `<div class="r-card"><div class="r-card-body" style="font-size:12px;line-height:1.8">${r.summary}</div></div>`);
+  }
+  h += `</div>`;
+  setOutput(h);
+}
+
+function renderGeneric(data, feat, id) {
+  document.getElementById('output-title').textContent = `${feat.icon} ${feat.name}`;
+  const result = data.result || data;
+  let h = `<div class="fu">`;
+
+  if (id==='margin-calc' && result.gross_profit!==undefined) {
+    const c = result.gross_profit>0?'var(--accent)':'var(--red)';
+    h += `<div class="calc-hero">
+      <div class="calc-num" style="color:${c}">$${result.gross_profit?.toFixed(2)}</div>
+      <div class="calc-label">Gross profit per unit · ${result.margin_pct}% margin</div>
+    </div>`;
+    h += block('Unit Economics', `<div class="r-card">${[
+      ['Selling Price','$'+result.selling_price,''],
+      ['COGS','-$'+result.cogs,'bad'],
+      ['Shipping','-$'+result.shipping,'bad'],
+      ['Platform Fees','-$'+result.platform_fees,'bad'],
+      ['Ad Spend','-$'+result.ad_spend,'bad'],
+      ['Returns','-$'+result.returns,'bad'],
+      ['Gross Profit','$'+result.gross_profit,result.gross_profit>0?'ok':'bad'],
+      ['Break-even Units',result.break_even_units,'warn'],
+      ['3-Month LTV','$'+result.ltv_3mo,'ok'],
+    ].map(([k,v,c])=>`<div class="r-kv"><span class="r-k">${k}</span><span class="r-v ${c}">${v}</span></div>`).join('')}</div>`);
+  } else if (Array.isArray(result)) {
+    h += renderArr(result);
+  } else if (typeof result==='object'&&result!==null) {
+    h += renderObj(result);
+  }
+
+  if (data.trending_videos?.length) {
+    h += block('▶️ Trending Videos', data.trending_videos.slice(0,5).map(v=>`
+      <div class="r-card">
+        <div class="r-card-title">${v.title}</div>
+        <div class="r-card-body">${v.channel}</div>
+        ${v.id?`<a href="https://youtube.com/watch?v=${v.id}" target="_blank" style="font-size:10px;font-family:var(--fm);color:var(--teal);text-decoration:none;margin-top:4px;display:block">Watch →</a>`:''}
+      </div>`).join(''));
+  }
+  if (data.news?.length) {
+    h += block('📡 Live News', data.news.slice(0,5).map(a=>`
+      <div class="r-card">
+        <div class="r-card-title">${a.title}</div>
+        <div class="r-card-body">${a.description||''}</div>
+        ${a.url?`<a href="${a.url}" target="_blank" style="font-size:10px;font-family:var(--fm);color:var(--teal);text-decoration:none;margin-top:4px;display:block">${a.source} →</a>`:''}
+      </div>`).join(''));
+  }
+
+  h += `</div>`;
+  setOutput(h);
+}
+
+function renderArr(arr) {
+  if (!arr.length) return '<div style="color:var(--text3);font-size:11px;font-family:var(--fm);padding:8px">No results.</div>';
+  return arr.map(item=>{
+    if (typeof item==='string') return `<div class="r-card"><div class="r-card-body">${item}</div></div>`;
+    if (typeof item!=='object') return `<span class="r-tag">${item}</span>`;
+    const tKey = ['title','name','hook','bundle_name','question','subject','domain','subreddit','handle','keyword','objection','test','opportunity','type','format'].find(k=>item[k]);
+    const bKey = ['description','body','answer','story','message','strategy','posting_strategy','reasoning','hypothesis','content','tip'].find(k=>item[k]);
+    let h = `<div class="r-card" style="margin-bottom:7px">`;
+    if (tKey) h+=`<div class="r-card-title">${item[tKey]}</div>`;
+    if (bKey) h+=`<div class="r-card-body">${item[bKey]}</div>`;
+    Object.entries(item).forEach(([k,v])=>{
+      if ([tKey,bKey].includes(k)) return;
+      if (typeof v==='string'||typeof v==='number') h+=`<div class="r-kv"><span class="r-k">${k.replace(/_/g,' ')}</span><span class="r-v">${v}</span></div>`;
+      else if (Array.isArray(v)&&v.length) h+=`<div style="margin-top:6px">${v.slice(0,4).map(t=>`<span class="r-tag">${t}</span>`).join('')}</div>`;
+    });
+    return h+`</div>`;
+  }).join('');
+}
+
+function renderObj(obj) {
+  let h='';
+  Object.entries(obj).forEach(([k,v])=>{
+    if (['ok','feature'].includes(k)) return;
+    if (Array.isArray(v)) {
+      h+=block(k.replace(/_/g,' '), v.every(i=>typeof i==='string')
+        ?`<div class="r-card"><ul class="r-list">${v.map(i=>`<li>${i}</li>`).join('')}</ul></div>`
+        :renderArr(v));
+    } else if (typeof v==='object'&&v!==null) {
+      h+=block(k.replace(/_/g,' '), `<div class="r-card">${Object.entries(v).filter(([,sv])=>typeof sv==='string'||typeof sv==='number').map(([sk,sv])=>`<div class="r-kv"><span class="r-k">${sk.replace(/_/g,' ')}</span><span class="r-v">${sv}</span></div>`).join('')}</div>`);
+    } else if (v!==null&&v!==undefined) {
+      const c=k==='verdict'?(v==='GO'?'ok':v==='NO-GO'?'bad':'warn'):'';
+      h+=`<div class="r-kv"><span class="r-k">${k.replace(/_/g,' ')}</span><span class="r-v ${c}">${v}</span></div>`;
+    }
+  });
+  return h;
+}
+
+function block(label, content) {
+  return `<div class="r-block"><div class="r-block-head"><div class="r-block-label">${label}</div></div>${content}</div>`;
+}
+
+// ═══════════════════════════════════════════════════════
+// DOCS
+// ═══════════════════════════════════════════════════════
+function buildDocs() {
+  const wrapper = document.createElement('div');
+  const grouped = {};
+  FEATURES.forEach(f=>{ (grouped[f.cat]||(grouped[f.cat]=[])).push(f); });
+  let h = `<div class="docs-wrap">
+    <input class="docs-search" placeholder="Search ${FEATURES.length} features…" oninput="filterDocs(this.value)" />`;
+  Object.entries(CATS).forEach(([k,c])=>{
+    if (!grouped[k]) return;
+    h += `<div class="doc-sec-head" id="dsec-${k}">${c.icon} ${c.label} <span style="background:var(--bg4);border:1px solid var(--border);border-radius:3px;padding:1px 6px;color:var(--text3)">${grouped[k].length}</span></div>`;
+    grouped[k].forEach(f=>{
+      const locked = !canUse(f.minPlan) && f.minPlan!=='free';
+      h+=`<div class="doc-card" id="dc-${f.id}" onclick="loadFeature('${f.id}')">
+        <div class="doc-card-icon">${f.icon}</div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:7px;margin-bottom:2px">
+            <div class="doc-card-name">${f.name}</div>
+            ${f.minPlan!=='free'?`<span class="feat-item-plan fp-${f.minPlan}">${f.minPlan}</span>`:''}
+            ${locked?'<span style="font-size:9px;font-family:var(--fm);color:var(--text3)">🔒</span>':''}
+          </div>
+          <div class="doc-card-desc">${f.desc}</div>
+          ${f.how?`<div class="doc-card-how">${f.how}</div>`:''}
+        </div>
+      </div>`;
+    });
+  });
+  h += `</div>`;
+  wrapper.innerHTML = h;
+  return wrapper;
+}
+
+window.filterDocs = function(q) {
+  const t = q.toLowerCase();
+  document.querySelectorAll('[id^="dc-"]').forEach(el=>{
+    const text = el.textContent.toLowerCase();
+    el.style.display = (text.includes(t)||!t)?'':'none';
+  });
+};
+
+// ═══════════════════════════════════════════════════════
+// SETTINGS
+// ═══════════════════════════════════════════════════════
+function buildSettings() {
+  const plan = _profile?.plan||'free';
+  const email= _sess?.user?.email||'';
+  const used = _profile?.reports_this_month||0;
+  const limit= PLAN_LIMITS[plan];
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = `<div class="settings-wrap">
+    <div style="font-size:18px;font-weight:800;letter-spacing:-.4px;margin-bottom:16px">⚙️ Settings & Billing</div>
+
+    <div class="s-section"><div class="s-sec-head">👤 Account</div>
+    <div class="s-sec-body">
+      <div class="s-kv"><span class="s-key">Email</span><span class="s-val">${email}</span></div>
+      <div class="s-kv"><span class="s-key">Plan</span><span class="s-val ok">${plan.toUpperCase()}</span></div>
+      <div class="s-kv"><span class="s-key">Reports this month</span><span class="s-val">${used} / ${limit===999999?'∞':limit}</span></div>
+      <div class="s-kv" style="border:none"><span class="s-key">User ID</span><span class="s-val" style="font-family:var(--fm);font-size:10px;color:var(--text3)">${_sess?.user?.id?.slice(0,16)+'…'||'—'}</span></div>
+    </div></div>
+
+    <div class="s-section"><div class="s-sec-head">🚀 Upgrade Plan</div>
+    <div class="s-sec-body">
+      ${[{k:'starter',p:'$29.99',r:5,feats:['Ad copy','Email sequences','SEO keywords','Amazon listing']},
+         {k:'growth',p:'$59.99',r:25,feats:['All Starter','GTM strategy','Competitor ads','TikTok calendar']},
+         {k:'scale',p:'$129.99',r:'∞',feats:['All Growth','White label','API access','Team seats']}]
+        .map(pl=>`<div class="plan-option ${pl.k===plan?'current':''}" onclick="${pl.k!==plan?`handleUpgrade('${pl.k}')`:''}" style="${pl.k!==plan?'cursor:pointer':''}">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <div class="plan-name">${pl.k.charAt(0).toUpperCase()+pl.k.slice(1)} ${pl.k===plan?'<span style="font-size:10px;color:var(--accent)">✓ current</span>':''}</div>
+            <div class="plan-price">${pl.p}<span style="font-size:11px;font-weight:400;color:var(--text3)">/mo</span></div>
+          </div>
+          <div class="plan-lim">${pl.r} reports/month · ${pl.feats.join(' · ')}</div>
+          ${pl.k!==plan?`<div style="margin-top:8px"><span style="font-size:11px;font-family:var(--fm);color:var(--accent)">Upgrade →</span></div>`:''}
+        </div>`).join('')}
+      <p style="font-size:10px;font-family:var(--fm);color:var(--text3);margin-top:8px">Have a referral code? Enter it at checkout for 50% off.</p>
+    </div></div>
+
+    <div class="s-section"><div class="s-sec-head">🔧 Actions</div>
+    <div class="s-sec-body">
+      <div class="s-actions">
+        <button class="s-btn" onclick="copyApiToken()">🔑 Copy API token</button>
+        <button class="s-btn" onclick="window.location.href='profile.html'">👤 Profile & Referrals</button>
+        <button class="s-btn" onclick="window.open('admin.html')">⬡ Admin panel</button>
+        <button class="s-btn danger" onclick="doSignOut()">→ Sign out</button>
+      </div>
+    </div></div>
+  </div>`;
+  return wrapper;
+}
+
+// ═══════════════════════════════════════════════════════
+// CMD PALETTE
+// ═══════════════════════════════════════════════════════
+let _cmdSel = 0, _cmdItems = [];
+
+function buildCmdList() {
+  _cmdItems = FEATURES.map(f=>({ id:f.id, icon:f.icon, name:f.name, cat:CATS[f.cat]?.label }));
+}
+
+function openCmd() {
+  document.getElementById('cmd').classList.add('open');
+  document.getElementById('cmd-input').value='';
+  document.getElementById('cmd-input').focus();
+  renderCmdList('');
+  _cmdSel = 0;
+}
+
+function closeCmd() { document.getElementById('cmd').classList.remove('open'); }
+
+function renderCmdList(q) {
+  const items = q ? _cmdItems.filter(i=>i.name.toLowerCase().includes(q.toLowerCase())||i.cat.toLowerCase().includes(q.toLowerCase())) : _cmdItems;
+  const list = document.getElementById('cmd-list');
+  list.innerHTML = items.slice(0,8).map((item,i)=>`
+    <div class="cmd-item${i===_cmdSel?' sel':''}" id="ci-${i}" onclick="cmdSelect(${i})">
+      <div class="cmd-item-icon">${item.icon}</div>
+      <div style="flex:1;min-width:0">
+        <div class="cmd-item-name">${item.name}</div>
+        <div class="cmd-item-cat">${item.cat}</div>
+      </div>
+    </div>`).join('');
+  list._items = items;
+}
+
+function cmdSelect(i) {
+  const items = document.getElementById('cmd-list')._items||_cmdItems;
+  if (items[i]) { closeCmd(); loadFeature(items[i].id); }
+}
+
+document.getElementById('cmd-input').addEventListener('input', e=>{ _cmdSel=0; renderCmdList(e.target.value); });
+document.getElementById('cmd-input').addEventListener('keydown', e=>{
+  const items = document.getElementById('cmd-list')._items||[];
+  if (e.key==='Escape') closeCmd();
+  else if (e.key==='ArrowDown') { e.preventDefault(); _cmdSel=Math.min(_cmdSel+1,Math.min(items.length-1,7)); renderCmdList(e.target.value); }
+  else if (e.key==='ArrowUp') { e.preventDefault(); _cmdSel=Math.max(_cmdSel-1,0); renderCmdList(e.target.value); }
+  else if (e.key==='Enter') { cmdSelect(_cmdSel); }
+});
+document.getElementById('cmd').addEventListener('click', e=>{ if(e.target===document.getElementById('cmd')) closeCmd(); });
+
+// ═══════════════════════════════════════════════════════
+// HISTORY DRAWER
+// ═══════════════════════════════════════════════════════
+function toggleHistory() {
+  const d = document.getElementById('hist-drawer');
+  const o = document.getElementById('hist-overlay');
+  const open = d.classList.contains('open');
+  if (open) closeHistory();
+  else { d.classList.add('open'); o.classList.add('open'); renderHistoryBody(); }
+}
+function closeHistory() {
+  document.getElementById('hist-drawer').classList.remove('open');
+  document.getElementById('hist-overlay').classList.remove('open');
+}
+function renderHistoryBody() {
+  const body = document.getElementById('hist-body');
+  if (!_reports.length) { body.innerHTML=`<div class="hist-empty">No analyses yet</div>`; return; }
+  body.innerHTML = _reports.map(r=>{
+    const sc=r.growth_score||0;
+    const c=sc>=80?'var(--accent)':sc>=60?'var(--amber)':'var(--red)';
+    return `<div class="recent-row" onclick="viewReport(${JSON.stringify(JSON.stringify(r))});closeHistory()">
+      <div class="recent-score" style="color:${c};font-size:16px">${sc||'—'}</div>
+      <div style="flex:1;min-width:0">
+        <div class="recent-name">${r.product_name||'Unnamed'}</div>
+        <div class="recent-meta">${r.product_category||''} · ${timeAgo(r.created_at)}</div>
+      </div>
+      <button class="recent-del" onclick="event.stopPropagation();delReport('${r.id}')">✕</button>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+// API & UTILITIES
+// ═══════════════════════════════════════════════════════
+async function apiFetch(path, opts={}) {
+  const headers={'Content-Type':'application/json'};
+  if (_sess?.access_token) headers['Authorization']=`Bearer ${_sess.access_token}`;
+  const res = await fetch(API_BASE+path,{headers,...opts});
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error||'Request failed');
+  return data;
+}
+
+async function loadReports() {
+  try { const d=await apiFetch('/api/user/reports'); _reports=d.reports||[]; renderRecentList(); }
+  catch { _reports=[]; }
+}
+
+async function delReport(id) {
+  try {
+    await apiFetch(`/api/user/report/${id}`,{method:'DELETE'});
+    _reports=_reports.filter(r=>r.id!==id);
+    renderRecentList(); renderHistoryBody();
+    showToast('Report deleted','info');
+  } catch { showToast('Delete failed','err'); }
+}
+
+function canUse(minPlan) { return PLAN_ORDER.indexOf(_profile?.plan||'free')>=PLAN_ORDER.indexOf(minPlan||'free'); }
+
+function handleUpgrade(plan) {
+  const link = STRIPE[plan];
+  if (!link||link.includes('YOUR_')) { showToast('Stripe links not configured in app.html STRIPE config','err'); return; }
+  const email=_sess?.user?.email||'';
+  window.open(`${link}?prefilled_email=${encodeURIComponent(email)}`, '_blank');
+}
+
+function copyApiToken() {
+  navigator.clipboard.writeText(_sess?.access_token||'').then(()=>showToast('API token copied','ok'));
+}
+
+async function doSignOut() {
+  await _sb?.auth.signOut();
+  window.location.href='login.html';
+}
+
+function setOutput(html) { document.getElementById('output-body').innerHTML=html; }
+
+function copyJSON() {
+  if (!_last) { showToast('Nothing to copy','err'); return; }
+  navigator.clipboard.writeText(JSON.stringify(_last,null,2)).then(()=>showToast('JSON copied','ok'));
+}
+
+function copyMD() {
+  if (!_last) { showToast('Nothing to copy','err'); return; }
+  function toMd(o,d=0){if(!o)return'';if(typeof o==='string')return o;if(typeof o==='number')return''+o;if(Array.isArray(o))return o.map(i=>typeof i==='object'?toMd(i,d+1):`- ${i}`).join('\n');return Object.entries(o).map(([k,v])=>`${'#'.repeat(Math.min(d+2,6))} ${k.replace(/_/g,' ')}\n${toMd(v,d+1)}`).join('\n\n');}
+  navigator.clipboard.writeText(toMd(_last)).then(()=>showToast('Markdown copied','ok'));
+}
+
+function loadingHTML(msg='Generating…') {
+  return `<div style="padding:8px">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;font-size:11px;font-family:var(--fm);color:var(--text3)"><div class="spin spin-l"></div>${msg}</div>
+    ${[100,80,60,90,70,50].map(w=>`<div class="ll" style="width:${w}%;margin-bottom:8px"></div>`).join('')}
+  </div>`;
+}
+
+function showToast(msg, type='ok') {
+  const c=document.getElementById('toast');
+  const el=document.createElement('div');
+  el.className=`toast-item ${type}`;
+  el.textContent=(type==='ok'?'✓ ':type==='err'?'⚠ ':'ℹ ')+msg;
+  c.appendChild(el);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('show')));
+  setTimeout(()=>{ el.classList.remove('show'); setTimeout(()=>el.remove(),300); },3000);
+}
+
+function timeAgo(ts) {
+  if (!ts) return '—';
+  const s=Math.round((Date.now()-new Date(ts))/1000);
+  if(s<60)return s+'s ago';if(s<3600)return Math.round(s/60)+'m ago';
+  if(s<86400)return Math.round(s/3600)+'h ago';return Math.round(s/86400)+'d ago';
+}
+
+// ═══════════════════════════════════════════════════════
+// KEYBOARD SHORTCUTS
+// ═══════════════════════════════════════════════════════
+document.addEventListener('keydown', e=>{
+  if ((e.metaKey||e.ctrlKey)&&e.key==='k') { e.preventDefault(); openCmd(); }
+  if (e.key==='Escape') { closeCmd(); closeHistory(); }
+  const active = document.activeElement;
+  const typing = active.tagName==='INPUT'||active.tagName==='TEXTAREA'||active.tagName==='SELECT';
+  if (!typing&&e.key==='/'&&document.getElementById('cmd').classList.contains('open')===false) { e.preventDefault(); openCmd(); }
+});
+
+// BOOT
+document.addEventListener('DOMContentLoaded', boot);
+</script>
+</body>
+</html>

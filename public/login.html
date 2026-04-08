@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Chamber — Sign In</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=Instrument+Serif:ital@1&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0A0A08;--bg2:#111110;--bg3:#1A1A18;--border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);--text:#F0EEE6;--text2:#8A8880;--text3:#555450;--accent:#C8F04A;--accent2:#A8D030;--adim:rgba(200,240,74,0.10);--red:#FF5C3A;--fd:'Syne',sans-serif;--fm:'DM Mono',monospace;--r:12px;--r2:8px}
+body{background:var(--bg);color:var(--text);font-family:var(--fd);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;-webkit-font-smoothing:antialiased}
+.bg-grid{position:fixed;inset:0;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:60px 60px;mask-image:radial-gradient(ellipse 70% 70% at 50% 50%,black 20%,transparent 100%);-webkit-mask-image:radial-gradient(ellipse 70% 70% at 50% 50%,black 20%,transparent 100%);pointer-events:none}
+.glow{position:fixed;top:20%;left:50%;transform:translateX(-50%);width:600px;height:400px;background:radial-gradient(ellipse,rgba(200,240,74,.06) 0%,transparent 70%);pointer-events:none}
+.card{width:100%;max-width:420px;position:relative;z-index:1}
+.logo{display:flex;align-items:center;gap:9px;font-size:18px;font-weight:800;letter-spacing:-.5px;margin-bottom:32px;justify-content:center;text-decoration:none;color:var(--text)}
+.logo-mark{width:30px;height:30px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center}
+.logo em{color:var(--accent);font-style:normal}
+.form-card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:32px;box-shadow:0 32px 80px rgba(0,0,0,.5)}
+.form-title{font-size:22px;font-weight:800;letter-spacing:-.5px;margin-bottom:6px}
+.form-sub{font-size:13px;color:var(--text2);margin-bottom:28px;line-height:1.6}
+.tabs{display:flex;background:var(--bg3);border-radius:8px;padding:3px;margin-bottom:24px}
+.tab{flex:1;font-family:var(--fd);font-size:13px;font-weight:600;padding:8px;border-radius:6px;border:none;cursor:pointer;transition:all .2s;color:var(--text2);background:transparent}
+.tab.act{background:var(--bg2);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.3)}
+label{display:block;font-size:11px;font-family:var(--fm);color:var(--text3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px}
+input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);padding:11px 14px;font-size:14px;font-family:var(--fd);color:var(--text);outline:none;transition:border-color .2s;margin-bottom:14px}
+input::placeholder{color:var(--text3)}
+input:focus{border-color:var(--accent)}
+.submit-btn{width:100%;background:var(--accent);color:#0A0A08;font-family:var(--fd);font-size:14px;font-weight:700;padding:13px;border-radius:var(--r2);border:none;cursor:pointer;transition:all .2s;margin-top:4px;display:flex;align-items:center;justify-content:center;gap:8px}
+.submit-btn:hover{background:var(--accent2);transform:translateY(-1px)}
+.submit-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.divider{display:flex;align-items:center;gap:12px;margin:18px 0;font-size:12px;font-family:var(--fm);color:var(--text3)}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
+.error-msg{background:rgba(255,92,58,.1);border:1px solid rgba(255,92,58,.2);border-radius:7px;padding:10px 14px;font-size:12px;font-family:var(--fm);color:var(--red);margin-bottom:14px;display:none}
+.success-msg{background:rgba(200,240,74,.08);border:1px solid rgba(200,240,74,.2);border-radius:7px;padding:10px 14px;font-size:12px;font-family:var(--fm);color:var(--accent);margin-bottom:14px;display:none}
+.forgot{font-size:12px;font-family:var(--fm);color:var(--text3);text-align:right;cursor:pointer;transition:color .15s;margin-top:-8px;margin-bottom:14px;display:block}
+.forgot:hover{color:var(--accent)}
+.footer-link{text-align:center;font-size:12px;color:var(--text3);margin-top:20px;font-family:var(--fm)}
+.footer-link a{color:var(--accent);text-decoration:none}
+.spinner{width:14px;height:14px;border:2px solid rgba(0,0,0,.25);border-top-color:#0A0A08;border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.feature-row{display:flex;gap:8px;margin-top:24px;flex-wrap:wrap}
+.feat-chip{font-size:10px;font-family:var(--fm);padding:3px 9px;border-radius:5px;background:var(--adim);border:1px solid rgba(200,240,74,.15);color:var(--text2)}
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="glow"></div>
+
+<div class="card">
+  <a href="index.html" class="logo">
+    <div class="logo-mark"><svg viewBox="0 0 16 16" fill="none" width="12" height="12"><polygon points="8,1 15,5 15,11 8,15 1,11 1,5" fill="#0A0A08"/></svg></div>
+    Chamber<em>.</em>
+  </a>
+
+  <div class="form-card">
+    <div class="form-title" id="form-title">Welcome back</div>
+    <div class="form-sub" id="form-sub">Sign in to your Chamber account to access all features.</div>
+
+    <div class="tabs">
+      <button class="tab act" id="tab-signin" onclick="switchTab('signin')">Sign In</button>
+      <button class="tab" id="tab-signup" onclick="switchTab('signup')">Create Account</button>
+    </div>
+
+    <div id="error-msg" class="error-msg"></div>
+    <div id="success-msg" class="success-msg"></div>
+
+    <div id="form-signin">
+      <label>Email</label>
+      <input id="si-email" type="email" placeholder="you@yourbrand.com" />
+      <label>Password</label>
+      <input id="si-password" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doSignIn()" />
+      <span class="forgot" onclick="doReset()">Forgot password?</span>
+      <button class="submit-btn" id="si-btn" onclick="doSignIn()">
+        Sign In <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </button>
+    </div>
+
+    <div id="form-signup" style="display:none">
+      <label>Full Name</label>
+      <input id="su-name" type="text" placeholder="Jane Smith" />
+      <label>Email</label>
+      <input id="su-email" type="email" placeholder="you@yourbrand.com" />
+      <label>Password</label>
+      <input id="su-password" type="password" placeholder="Min. 8 characters" onkeydown="if(event.key==='Enter')doSignUp()" />
+      <button class="submit-btn" id="su-btn" onclick="doSignUp()">
+        Create Free Account →
+      </button>
+    </div>
+
+    <div class="feature-row">
+      <span class="feat-chip">⚡ 3 free analyses</span>
+      <span class="feat-chip">🎯 50+ features</span>
+      <span class="feat-chip">🔍 Reddit sentiment</span>
+      <span class="feat-chip">🤳 Influencer matches</span>
+    </div>
+  </div>
+
+  <div class="footer-link">
+    <a href="index.html">← Back to homepage</a> · <a href="admin.html">Admin</a>
+  </div>
+</div>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────────
+let SUPABASE_URL = '', SUPABASE_ANON_KEY = '', _sb;
+const API_BASE = window.location.hostname === 'localhost' 
+  ? 'http://localhost:3001' 
+  : 'https://your-api.com';
+
+// ── INIT + AUTO-REDIRECT ─────────────────────────────────
+(async () => {
+  const cfg = await fetch(API_BASE + '/api/config').then(r => r.json());
+  SUPABASE_URL = cfg.supabaseUrl;
+  SUPABASE_ANON_KEY = cfg.supabaseAnonKey;
+  _sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const { data: { session } } = await _sb.auth.getSession();
+  if (session) window.location.href = 'app.html';
+})();
+
+// ── TAB SWITCHING ───────────────────────────────────────
+function switchTab(tab) {
+  document.getElementById('form-signin').style.display = tab === 'signin' ? '' : 'none';
+  document.getElementById('form-signup').style.display = tab === 'signup' ? '' : 'none';
+  document.getElementById('tab-signin').className = 'tab' + (tab==='signin'?' act':'');
+  document.getElementById('tab-signup').className = 'tab' + (tab==='signup'?' act':'');
+  document.getElementById('form-title').textContent = tab === 'signin' ? 'Welcome back' : 'Start for free';
+  document.getElementById('form-sub').textContent = tab === 'signin'
+    ? 'Sign in to access your Chamber dashboard and 50+ AI features.'
+    : 'Create your free account. No credit card required.';
+  hideMessages();
+}
+
+function showError(msg) {
+  const el = document.getElementById('error-msg');
+  el.textContent = '⚠ ' + msg;
+  el.style.display = 'block';
+  document.getElementById('success-msg').style.display = 'none';
+}
+function showSuccess(msg) {
+  const el = document.getElementById('success-msg');
+  el.textContent = '✓ ' + msg;
+  el.style.display = 'block';
+  document.getElementById('error-msg').style.display = 'none';
+}
+function hideMessages() {
+  document.getElementById('error-msg').style.display = 'none';
+  document.getElementById('success-msg').style.display = 'none';
+}
+function setLoading(btnId, loading) {
+  const btn = document.getElementById(btnId);
+  btn.disabled = loading;
+  btn.innerHTML = loading
+    ? '<div class="spinner"></div>'
+    : (btnId === 'si-btn' ? 'Sign In <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>' : 'Create Free Account →');
+}
+
+// ── SIGN IN ─────────────────────────────────────────────
+async function doSignIn() {
+  const email = document.getElementById('si-email').value.trim();
+  const password = document.getElementById('si-password').value;
+  if (!email || !password) { showError('Enter your email and password'); return; }
+
+  setLoading('si-btn', true);
+  hideMessages();
+  try {
+    // Call our backend (which calls supabase and logs the event)
+    const res = await fetch(API_BASE + '/api/auth/signin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Sign in failed');
+    // Set session in supabase client
+    await _sb.auth.setSession({ access_token: data.session.access_token, refresh_token: data.session.refresh_token });
+    window.location.href = 'app.html';
+  } catch (err) {
+    showError(err.message);
+    setLoading('si-btn', false);
+  }
+}
+
+// ── SIGN UP ─────────────────────────────────────────────
+async function doSignUp() {
+  const name = document.getElementById('su-name').value.trim();
+  const email = document.getElementById('su-email').value.trim();
+  const password = document.getElementById('su-password').value;
+  if (!email || !password) { showError('Enter your email and password'); return; }
+  if (password.length < 8) { showError('Password must be at least 8 characters'); return; }
+
+  setLoading('su-btn', true);
+  hideMessages();
+  try {
+    const res = await fetch(API_BASE + '/api/auth/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, full_name: name, source: 'web' })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Signup failed');
+
+    if (data.session) {
+      await _sb.auth.setSession({ access_token: data.session.access_token, refresh_token: data.session.refresh_token });
+      window.location.href = 'app.html';
+    } else {
+      showSuccess('Check your email to confirm your account, then sign in!');
+      switchTab('signin');
+    }
+  } catch (err) {
+    showError(err.message);
+  }
+  setLoading('su-btn', false);
+}
+
+// ── RESET PASSWORD ──────────────────────────────────────
+async function doReset() {
+  const email = document.getElementById('si-email').value.trim();
+  if (!email) { showError('Enter your email first'); return; }
+  try {
+    const res = await fetch(API_BASE + '/api/auth/reset-password', {
+      method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ email })
+    });
+    showSuccess('Password reset email sent. Check your inbox.');
+  } catch { showError('Reset failed — check your email address'); }
+}
+</script>
+</body>
+</html>

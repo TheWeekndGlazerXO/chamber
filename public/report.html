@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Chamber · Analysis Report</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Fraunces:ital,wght@0,300;0,700;1,200;1,500;1,800&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#080807;--bg2:#0f0f0d;--bg3:#181816;--bg4:#202020;
+  --border:rgba(255,255,255,.06);--border2:rgba(255,255,255,.12);
+  --text:#F2EFE7;--text2:#8C8A82;--text3:#4A4845;
+  --accent:#C8F04A;--accent2:#A8D030;--adim:rgba(200,240,74,.09);
+  --red:#FF5C3A;--teal:#3AFFD4;--amber:#FFB830;
+  --fd:'Syne',sans-serif;--fm:'DM Mono',monospace;--fs:'Fraunces',serif;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--fd);-webkit-font-smoothing:antialiased;min-height:100vh}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:2px}
+
+/* ── GRID NOISE OVERLAY ── */
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");pointer-events:none;z-index:0;opacity:.4}
+
+/* ── NAV ── */
+.nav{position:sticky;top:0;z-index:100;background:rgba(8,8,7,.88);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 40px;height:54px;display:flex;align-items:center;justify-content:space-between}
+.logo{display:flex;align-items:center;gap:8px;text-decoration:none;color:var(--text);font-size:15px;font-weight:800;letter-spacing:-.4px}
+.logo-hex{width:24px;height:24px;background:var(--accent);border-radius:5px;display:flex;align-items:center;justify-content:center}
+.logo em{color:var(--accent);font-style:normal}
+.nav-r{display:flex;align-items:center;gap:8px}
+.btn{font-family:var(--fd);font-size:12px;font-weight:600;padding:7px 14px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;transition:all .15s;text-decoration:none;display:inline-flex;align-items:center;gap:6px;letter-spacing:.01em}
+.btn:hover{color:var(--text);background:var(--bg3);border-color:var(--border2)}
+.btn.accent{background:var(--accent);color:#080807;border-color:var(--accent);font-weight:700}
+.btn.accent:hover{background:var(--accent2)}
+
+/* ── HERO ── */
+.hero{position:relative;padding:64px 40px 48px;max-width:1200px;margin:0 auto;z-index:1}
+.hero-meta{font-size:10px;font-family:var(--fm);color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:16px;display:flex;align-items:center;gap:12px}
+.hero-meta span{display:flex;align-items:center;gap:5px}
+.hero-meta .dot{width:5px;height:5px;border-radius:50%;background:var(--accent);animation:pulse-dot 2s ease-in-out infinite}
+@keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:.3}}
+.hero-title{font-family:var(--fs);font-size:clamp(36px,5vw,68px);font-weight:700;font-style:italic;letter-spacing:-2px;line-height:1;margin-bottom:8px;color:var(--text)}
+.hero-sub{font-size:14px;color:var(--text2);font-family:var(--fm);margin-bottom:40px}
+
+/* SCORE DISPLAY */
+.score-strip{display:flex;align-items:flex-end;gap:40px;padding:32px 36px;background:linear-gradient(135deg,rgba(200,240,74,.07) 0%,rgba(58,255,212,.03) 100%);border:1px solid rgba(200,240,74,.18);border-radius:14px;margin-bottom:40px;position:relative;overflow:hidden}
+.score-strip::before{content:'';position:absolute;top:-40px;right:-40px;width:200px;height:200px;background:radial-gradient(circle,rgba(200,240,74,.08),transparent 70%);pointer-events:none}
+.score-num{font-family:var(--fs);font-size:96px;font-weight:800;line-height:1;letter-spacing:-6px;font-style:italic}
+.score-divider{width:1px;height:80px;background:var(--border2);flex-shrink:0}
+.score-details{flex:1}
+.score-label{font-size:10px;font-family:var(--fm);color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px}
+.score-breakdown{display:flex;flex-direction:column;gap:7px}
+.sbd-row{display:flex;align-items:center;gap:10px}
+.sbd-name{font-size:10px;font-family:var(--fm);color:var(--text2);width:130px;flex-shrink:0}
+.sbd-track{flex:1;height:3px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden}
+.sbd-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--teal),var(--accent));transition:width 1.2s cubic-bezier(.16,1,.3,1)}
+.sbd-val{font-size:10px;font-family:var(--fm);color:var(--accent);width:24px;text-align:right;flex-shrink:0}
+.score-verdict{margin-left:auto;text-align:right;flex-shrink:0}
+.verdict-ring{width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-family:var(--fm);letter-spacing:.08em;text-transform:uppercase;font-weight:700;border:2px solid;flex-direction:column;gap:2px}
+
+/* ── MAIN GRID ── */
+.page{max-width:1200px;margin:0 auto;padding:0 40px 80px;position:relative;z-index:1}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.grid-2-1{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px}
+.span-2{grid-column:span 2}
+.span-3{grid-column:span 3}
+
+/* ── CARDS ── */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.card-head{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.card-label{font-size:9px;font-family:var(--fm);color:var(--text3);letter-spacing:.12em;text-transform:uppercase}
+.card-icon{font-size:14px}
+.card-body{padding:18px}
+
+/* ── MARKETING ANGLES ── */
+.angle-item{padding:12px 14px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px;transition:border-color .15s;cursor:default}
+.angle-item:last-child{margin-bottom:0}
+.angle-item:hover{border-color:var(--border2)}
+.angle-num{font-size:8px;font-family:var(--fm);color:var(--accent);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px}
+.angle-title{font-size:13px;font-weight:700;letter-spacing:-.2px;margin-bottom:4px}
+.angle-desc{font-size:11px;color:var(--text2);line-height:1.6}
+.angle-bar{height:2px;background:var(--bg4);border-radius:1px;margin-top:8px;overflow:hidden}
+.angle-bar-fill{height:100%;background:linear-gradient(90deg,var(--teal),var(--accent));border-radius:1px}
+
+/* ── COMPETITORS ── */
+.comp-item{display:flex;align-items:flex-start;gap:12px;padding:11px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.comp-item:last-child{border-bottom:none}
+.comp-threat{width:32px;height:32px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;font-family:var(--fm);flex-shrink:0}
+.comp-name{font-size:12px;font-weight:700;margin-bottom:2px}
+.comp-price{font-size:10px;font-family:var(--fm);color:var(--text3)}
+.comp-gap{font-size:11px;color:var(--teal);margin-top:3px;line-height:1.45}
+
+/* ── REDDIT SENTIMENT ── */
+.reddit-bars{display:flex;flex-direction:column;gap:12px;margin-bottom:14px}
+.reddit-row{display:flex;align-items:center;gap:10px}
+.reddit-label{font-size:11px;font-family:var(--fm);color:var(--text2);width:70px;flex-shrink:0}
+.reddit-track{flex:1;height:6px;background:var(--bg4);border-radius:3px;overflow:hidden}
+.reddit-fill{height:100%;border-radius:3px;transition:width 1s ease}
+.reddit-pct{font-size:11px;font-family:var(--fm);font-weight:600;width:34px;text-align:right}
+.theme-tags{display:flex;flex-wrap:wrap;gap:5px}
+.theme-tag{font-size:10px;font-family:var(--fm);padding:3px 8px;border-radius:4px;background:var(--bg3);border:1px solid var(--border);color:var(--text2)}
+
+/* ── INFLUENCERS ── */
+.inf-item{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.inf-item:last-child{border-bottom:none}
+.inf-emoji{width:36px;height:36px;border-radius:50%;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.inf-handle{font-size:12px;font-weight:700;margin-bottom:1px}
+.inf-meta{font-size:10px;font-family:var(--fm);color:var(--text3)}
+.inf-score{margin-left:auto;background:var(--adim);border:1px solid rgba(200,240,74,.2);border-radius:5px;padding:3px 8px;font-size:11px;font-family:var(--fm);font-weight:700;color:var(--accent);flex-shrink:0}
+
+/* ── KEYWORDS ── */
+.kw-item{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:11px}
+.kw-item:last-child{border-bottom:none}
+.kw-word{font-weight:600;flex:1;color:var(--text)}
+.kw-intent{font-family:var(--fm);font-size:9px;padding:2px 6px;border-radius:3px;background:var(--bg3);color:var(--text3)}
+.kw-diff{font-family:var(--fm);font-size:10px}
+.kw-diff.Low{color:var(--teal)}
+.kw-diff.Medium{color:var(--amber)}
+.kw-diff.High{color:var(--red)}
+.kw-opp{font-family:var(--fm);font-size:10px;color:var(--accent);min-width:28px;text-align:right}
+
+/* ── MARKET SIZE ── */
+.market-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px}
+.market-item{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center}
+.market-label{font-size:9px;font-family:var(--fm);color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:5px}
+.market-val{font-size:18px;font-weight:800;font-family:var(--fs);letter-spacing:-.5px;color:var(--accent)}
+.market-growth{font-size:11px;font-family:var(--fm);color:var(--teal);text-align:center;margin-top:4px}
+
+/* ── ACTION PLAN ── */
+.action-list{list-style:none;counter-reset:actions}
+.action-item{display:flex;gap:12px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px;color:var(--text2);line-height:1.6;counter-increment:actions}
+.action-item:last-child{border-bottom:none}
+.action-item::before{content:counter(actions,decimal-leading-zero);font-family:var(--fm);font-size:9px;color:var(--accent);min-width:20px;padding-top:3px;flex-shrink:0;letter-spacing:.05em}
+
+/* ── SUMMARY ── */
+.summary-text{font-size:13px;color:var(--text2);line-height:1.85;font-family:var(--fm)}
+
+/* ── SAMPLE POSTS ── */
+.post-item{background:var(--bg3);border-left:2px solid var(--accent);border-radius:0 6px 6px 0;padding:8px 12px;margin-bottom:7px;font-size:11px;font-family:var(--fm);color:var(--text2);line-height:1.55}
+.post-sub{color:var(--accent);font-size:9px;margin-bottom:3px;letter-spacing:.05em}
+.post-score{color:var(--text3);font-size:9px;margin-top:3px}
+
+/* ── FOOTER ── */
+.report-footer{border-top:1px solid var(--border);padding:24px 40px;max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;font-size:10px;font-family:var(--fm);color:var(--text3)}
+
+/* ── PRINT ── */
+@media print{
+  body{background:#fff;color:#000}
+  .nav,.nav-r{display:none}
+  .card{border:1px solid #ddd;break-inside:avoid}
+  .hero{padding-top:20px}
+  .score-num{color:#000}
+}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.fu{animation:fadeUp .4s ease both}
+.fu-1{animation-delay:.05s}
+.fu-2{animation-delay:.1s}
+.fu-3{animation-delay:.15s}
+.fu-4{animation-delay:.2s}
+.fu-5{animation-delay:.25s}
+
+/* ── EMPTY STATE ── */
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:16px;text-align:center}
+.empty-icon{font-size:48px;opacity:.3}
+.empty-title{font-size:18px;font-weight:700;color:var(--text2)}
+.empty-sub{font-size:13px;font-family:var(--fm);color:var(--text3);max-width:300px;line-height:1.6}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <a href="app.html" class="logo">
+    <div class="logo-hex"><svg viewBox="0 0 16 16" fill="none" width="11" height="11"><polygon points="8,1 15,5 15,11 8,15 1,11 1,5" fill="#080807"/></svg></div>
+    Chamber<em>.</em>
+  </a>
+  <div class="nav-r">
+    <a href="app.html" class="btn">← Dashboard</a>
+    <button class="btn" onclick="window.print()">🖨 Print</button>
+    <button class="btn accent" onclick="exportPDF()">⬇ Export PDF</button>
+  </div>
+</nav>
+
+<div id="app">
+  <!-- content injected by JS -->
+</div>
+
+<script>
+// ─────────────────────────────────────────────────────
+// LOAD REPORT DATA
+// Priority: URL ?data= param → sessionStorage → demo
+// ─────────────────────────────────────────────────────
+let report = null;
+
+function loadData() {
+  // 1. Try sessionStorage (set by app.html before navigating)
+  try {
+    const stored = sessionStorage.getItem('chamber_report');
+    if (stored) { report = JSON.parse(stored); return; }
+  } catch {}
+
+  // 2. Try URL param ?id= (future: fetch from API)
+  // 3. Fall back to demo data
+  report = getDemoData();
+}
+
+function getDemoData() {
+  return {
+    product_name: "SoundWave Pro X Headphones",
+    category: "Audio / Consumer Electronics",
+    growth_score: 87,
+    created_at: new Date().toISOString(),
+    score_breakdown: { market_timing: 88, search_demand: 91, competition_gap: 82, audience_fit: 85, trend_momentum: 89 },
+    marketing_angles: [
+      { title: "Studio quality for commuters", description: "Position as the upgrade audiophiles actually approve of — premium without pretension.", strength: 5 },
+      { title: "The upgrade audiophiles approve", description: "Tap into the growing WFH culture where audio quality directly impacts professional perception.", strength: 4 },
+      { title: "Work calls that actually sound good", description: "Micro-influencer content targeting gym culture — performance audio for performance athletes.", strength: 4 },
+      { title: "Your gym soundtrack, elevated", description: "Fear-of-missing-out angle targeting premium buyers who want the best without research paralysis.", strength: 3 },
+    ],
+    competitors: [
+      { name: "Sony WH-1000XM5", price: "$279", weakness: "Too corporate, lacks lifestyle positioning", threat_level: 8 },
+      { name: "Bose QuietComfort 45", price: "$329", weakness: "Aging design language, Gen Z avoidance", threat_level: 7 },
+      { name: "Apple AirPods Max", price: "$549", weakness: "Extreme price barrier, non-audiophile sound", threat_level: 5 },
+      { name: "Anker Soundcore Q45", price: "$79", weakness: "Budget perception, no prestige signal", threat_level: 4 },
+    ],
+    reddit_sentiment: {
+      positive: 62, neutral: 24, negative: 14,
+      key_themes: ["noise cancellation", "battery life", "comfort for long sessions", "value vs AirPods Max", "remote work setup"],
+      sample_posts: [
+        { subreddit: "r/headphones", text: "Finally found something that beats Sony for the price...", upvotes: "1.2k" },
+        { subreddit: "r/WorkFromHome", text: "Game changer for back-to-back calls, worth every penny", upvotes: "847" },
+      ]
+    },
+    influencers: [
+      { emoji: "🎵", handle: "@audiophile_jay", platform: "YouTube", followers: "42k", engagement: "8.4%", niche: "Audio reviews & setups", match_score: 95 },
+      { emoji: "💼", handle: "@wfh_lifestyle", platform: "Instagram", followers: "28k", engagement: "6.1%", niche: "Work from home culture", match_score: 88 },
+      { emoji: "🏋️", handle: "@gym.tok", platform: "TikTok", followers: "67k", engagement: "11.2%", niche: "Fitness & performance gear", match_score: 81 },
+      { emoji: "🎮", handle: "@techsetup_daily", platform: "Instagram", followers: "119k", engagement: "4.8%", niche: "Desk setups & peripherals", match_score: 77 },
+    ],
+    keywords: [
+      { keyword: "best headphones under 200", intent: "commercial", difficulty: "Medium", monthly_searches: "74k", opportunity_score: 91 },
+      { keyword: "noise cancelling headphones review", intent: "informational", difficulty: "High", monthly_searches: "110k", opportunity_score: 74 },
+      { keyword: "headphones for remote work", intent: "commercial", difficulty: "Low", monthly_searches: "22k", opportunity_score: 96 },
+      { keyword: "wireless headphones audiophile", intent: "commercial", difficulty: "Medium", monthly_searches: "18k", opportunity_score: 88 },
+      { keyword: "headphones under 300", intent: "transactional", difficulty: "Low", monthly_searches: "31k", opportunity_score: 93 },
+    ],
+    market_size: { tam: "$11.8B", sam: "$2.4B", som: "$48M", growth_rate: "+14.2% CAGR" },
+    actionable_tips: [
+      "Launch TikTok UGC campaign targeting #workfromhome and #desksetup communities before Q4 push",
+      "Partner with 3-5 micro audiophile YouTubers (20k-80k subs) on performance commission — target 15%",
+      "Run Reddit AMA in r/headphones with founder — authenticity drives organic backlinks",
+      "Optimize for 'headphones for remote work' — low difficulty, high commercial intent, underserved",
+      "Bundle with 3-month streaming trial to increase AOV and reduce price sensitivity at checkout",
+      "Target enterprise buyers via LinkedIn — IT departments buying in bulk for distributed teams",
+      "Create comparison content vs Sony/Bose at half the price — SEO goldmine, buyer intent traffic",
+    ],
+    summary: "SoundWave Pro X sits in a high-opportunity window between premium and mid-market headphone segments. Reddit sentiment is strongly positive with authentic user advocacy forming naturally. The remote work tailwind creates a durable demand signal beyond typical consumer audio cycles. Primary risk is brand recognition vs established players — this is best overcome through aggressive micro-influencer seeding and user-generated content rather than paid acquisition. Prioritise organic channels for the first 90 days to build social proof, then scale paid against the 'remote work' keyword cluster.",
+    trend_velocity: "rising",
+    viral_potential: { score: 78, reason: "Strong UGC potential, aspirational product photography, multiple content angles across fitness, WFH and audio niches" },
+    pain_points: ["Cable tangles and short battery on budget options", "Price shock of premium tier (AirPods Max)", "Comfort for 8+ hour workdays", "Audio quality degradation on calls vs music"],
+    best_channels: ["TikTok (UGC)", "YouTube (Reviews)", "Reddit (Community)", "Google Shopping (intent)"],
+  };
+}
+
+// ─────────────────────────────────────────────────────
+// RENDER
+// ─────────────────────────────────────────────────────
+function render(r) {
+  const sc = r.growth_score || 0;
+  const scoreColor = sc >= 80 ? 'var(--accent)' : sc >= 60 ? 'var(--amber)' : 'var(--red)';
+  const verdictColor = sc >= 80 ? 'rgba(200,240,74,.15)' : sc >= 60 ? 'rgba(255,184,48,.15)' : 'rgba(255,92,58,.15)';
+  const verdictText = sc >= 80 ? 'Strong Buy' : sc >= 60 ? 'Promising' : 'Risky';
+  const verdictBorder = sc >= 80 ? 'var(--accent)' : sc >= 60 ? 'var(--amber)' : 'var(--red)';
+  const date = r.created_at ? new Date(r.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'Just now';
+
+  document.getElementById('app').innerHTML = `
+    <!-- HERO -->
+    <div class="hero fu">
+      <div class="hero-meta">
+        <span><span class="dot"></span> Live report</span>
+        <span>Generated ${date}</span>
+        ${r.category ? `<span>${r.category}</span>` : ''}
+      </div>
+      <div class="hero-title">${r.product_name || 'Product Analysis'}</div>
+      <div class="hero-sub">Chamber Intelligence Report · AI-powered product analysis</div>
+
+      <!-- SCORE STRIP -->
+      <div class="score-strip">
+        <div>
+          <div style="font-size:10px;font-family:var(--fm);color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px">Growth Score</div>
+          <div class="score-num" style="color:${scoreColor}">${sc}</div>
+          <div style="font-size:10px;font-family:var(--fm);color:var(--text3);margin-top:4px">out of 100</div>
+        </div>
+        <div class="score-divider"></div>
+        <div class="score-details">
+          <div class="score-label">Score Breakdown</div>
+          <div class="score-breakdown">
+            ${r.score_breakdown ? Object.entries(r.score_breakdown).map(([k,v])=>`
+              <div class="sbd-row">
+                <div class="sbd-name">${k.replace(/_/g,' ')}</div>
+                <div class="sbd-track"><div class="sbd-fill" style="width:${v}%"></div></div>
+                <div class="sbd-val">${v}</div>
+              </div>`).join('') : ''}
+          </div>
+        </div>
+        ${r.viral_potential ? `
+        <div class="score-divider"></div>
+        <div>
+          <div style="font-size:10px;font-family:var(--fm);color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px">Viral Potential</div>
+          <div style="font-size:42px;font-weight:800;font-family:var(--fs);letter-spacing:-2px;color:var(--teal);font-style:italic">${r.viral_potential.score}</div>
+          <div style="font-size:10px;font-family:var(--fm);color:var(--text3);margin-top:4px;max-width:140px;line-height:1.5">${r.viral_potential.reason?.slice(0,80) || ''}</div>
+        </div>` : ''}
+        <div class="score-verdict" style="margin-left:auto">
+          <div class="verdict-ring" style="background:${verdictColor};border-color:${verdictBorder};color:${verdictBorder}">
+            <span style="font-size:14px">${sc >= 80 ? '🚀' : sc >= 60 ? '⚡' : '⚠️'}</span>
+            <span>${verdictText}</span>
+          </div>
+          ${r.trend_velocity ? `<div style="font-size:9px;font-family:var(--fm);color:var(--text3);text-align:center;margin-top:8px;letter-spacing:.06em;text-transform:uppercase">${r.trend_velocity === 'rising' ? '↑ ' : r.trend_velocity === 'declining' ? '↓ ' : '→ '}${r.trend_velocity}</div>` : ''}
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE CONTENT -->
+    <div class="page">
+
+      <!-- ROW 1: Marketing Angles + Reddit Sentiment -->
+      <div class="grid-2-1 fu fu-1">
+
+        <!-- Marketing Angles -->
+        <div class="card">
+          <div class="card-head">
+            <div class="card-label">🎯 Marketing Angles</div>
+            <div style="font-size:10px;font-family:var(--fm);color:var(--text3)">${r.marketing_angles?.length || 0} angles</div>
+          </div>
+          <div class="card-body">
+            ${(r.marketing_angles || []).map((a,i)=>`
+              <div class="angle-item">
+                <div class="angle-num">Angle ${String(i+1).padStart(2,'0')}</div>
+                <div class="angle-title">${a.title}</div>
+                <div class="angle-desc">${a.description}</div>
+                ${a.strength ? `<div class="angle-bar"><div class="angle-bar-fill" style="width:${a.strength*20}%"></div></div>` : ''}
+              </div>`).join('')}
+          </div>
+        </div>
+
+        <!-- Reddit Sentiment -->
+        <div class="card">
+          <div class="card-head">
+            <div class="card-label">📊 Reddit Sentiment</div>
+          </div>
+          <div class="card-body">
+            ${r.reddit_sentiment ? `
+            <div class="reddit-bars">
+              <div class="reddit-row">
+                <div class="reddit-label">Positive</div>
+                <div class="reddit-track"><div class="reddit-fill" style="width:${r.reddit_sentiment.positive}%;background:var(--accent)"></div></div>
+                <div class="reddit-pct" style="color:var(--accent)">${r.reddit_sentiment.positive}%</div>
+              </div>
+              <div class="reddit-row">
+                <div class="reddit-label">Neutral</div>
+                <div class="reddit-track"><div class="reddit-fill" style="width:${r.reddit_sentiment.neutral}%;background:var(--text3)"></div></div>
+                <div class="reddit-pct" style="color:var(--text3)">${r.reddit_sentiment.neutral}%</div>
+              </div>
+              <div class="reddit-row">
+                <div class="reddit-label">Negative</div>
+                <div class="reddit-track"><div class="reddit-fill" style="width:${r.reddit_sentiment.negative}%;background:var(--red)"></div></div>
+                <div class="reddit-pct" style="color:var(--red)">${r.reddit_sentiment.negative}%</div>
+              </div>
+            </div>
+            ${r.reddit_sentiment.key_themes?.length ? `
+            <div style="font-size:9px;font-family:var(--fm);color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:7px">Key Themes</div>
+            <div class="theme-tags">${r.reddit_sentiment.key_themes.map(t=>`<span class="theme-tag">${t}</span>`).join('')}</div>` : ''}
+            ${r.reddit_sentiment.sample_posts?.length ? `
+            <div style="font-size:9px;font-family:var(--fm);color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin:14px 0 8px">Sample Posts</div>
+            ${r.reddit_sentiment.sample_posts.slice(0,2).map(p=>`
+              <div class="post-item">
+                <div class="post-sub">${p.subreddit}</div>
+                "${(p.text||'').slice(0,90)}…"
+                <div class="post-score">↑ ${p.upvotes}</div>
+              </div>`).join('')}` : ''}` : '<div style="color:var(--text3);font-size:12px;font-family:var(--fm)">No Reddit data</div>'}
+          </div>
+        </div>
+      </div>
+
+      <!-- ROW 2: Competitors + Influencers -->
+      <div class="grid-2 fu fu-2">
+
+        <!-- Competitors -->
+        <div class="card">
+          <div class="card-head">
+            <div class="card-label">🔍 Competitor Analysis</div>
+            <div style="font-size:10px;font-family:var(--fm);color:var(--text3)">${r.competitors?.length || 0} identified</div>
+          </div>
+          <div class="card-body">
+            ${(r.competitors || []).map(c=>{
+              const tl = c.threat_level || 0;
+              const tc = tl >= 7 ? 'var(--red)' : tl >= 4 ? 'var(--amber)' : 'var(--teal)';
+              const tbg = tl >= 7 ? 'rgba(255,92,58,.12)' : tl >= 4 ? 'rgba(255,184,48,.1)' : 'rgba(58,255,212,.1)';
+              return `<div class="comp-item">
+                <div class="comp-threat" style="background:${tbg};color:${tc}">${tl}/10</div>
+                <div style="flex:1;min-width:0">
+                  <div class="comp-name">${c.name}</div>
+                  <div class="comp-price">${c.price}</div>
+                  <div class="comp-gap">→ Gap: ${c.weakness}</div>
+                </div>
+              </div>`;}).join('')}
+          </div>
+        </div>
+
+        <!-- Influencers -->
+        <div class="card">
+          <div class="card-head">
+            <div class="card-label">🤳 Influencer Matches</div>
+            <div style="font-size:10px;font-family:var(--fm);color:var(--teal)">by match score</div>
+          </div>
+          <div class="card-body">
+            ${(r.influencers || []).map(inf=>`
+              <div class="inf-item">
+                <div class="inf-emoji">${inf.emoji || '👤'}</div>
+                <div style="flex:1;min-width:0">
+                  <div class="inf-handle">${inf.handle}</div>
+                  <div class="inf-meta">${inf.platform} · ${inf.followers} · ${inf.engagement || ''}</div>
+                  <div style="font-size:10px;font-family:var(--fm);color:var(--text2);margin-top:2px">${inf.niche}</div>
+                </div>
+                <div class="inf-score">${inf.match_score}%</div>
+              </div>`).join('')}
+          </div>
+        </div>
+      </div>
+
+      <!-- ROW 3: Keywords + Market Size -->
+      <div class="grid-2-1 fu fu-3">
+
+        <!-- Keywords -->
+        <div class="card">
+          <div class="card-head">
+            <div class="card-label">🔑 SEO Keywords</div>
+            <div style="display:flex;gap:14px;font-size:9px;font-family:var(--fm);color:var(--text3)">
+              <span style="color:var(--teal)">Low</span>
+              <span style="color:var(--amber)">Med</span>
+              <span style="color:var(--red)">High</span>
+              <span>difficulty</span>
+            </div>
+          </div>
+          <div class="card-body" style="padding:0">
+            <div style="padding:0 18px">
+              <div style="display:flex;align-items:center;gap:8px;padding:8px 0 6px;border-bottom:1px solid var(--border)">
+                <div style="font-size:9px;font-family:var(--fm);color:var(--text3);flex:1;letter-spacing:.06em;text-transform:uppercase">Keyword</div>
+                <div style="font-size:9px;font-family:var(--fm);color:var(--text3);width:70px;letter-spacing:.06em;text-transform:uppercase">Intent</div>
+                <div style="font-size:9px;font-family:var(--fm);color:var(--text3);width:40px;letter-spacing:.06em;text-transform:uppercase">Diff</div>
+                <div style="font-size:9px;font-family:var(--fm);color:var(--text3);width:50px;text-align:right;letter-spacing:.06em;text-transform:uppercase">Vol</div>
+                <div style="font-size:9px;font-family:var(--fm);color:var(--text3);width:28px;text-align:right;letter-spacing:.06em;text-transform:uppercase">Opp</div>
+              </div>
+              ${(r.keywords || []).slice(0,8).map(kw=>`
+                <div class="kw-item">
+                  <div class="kw-word">${kw.keyword}</div>
+                  <div style="width:70px"><span class="kw-intent">${kw.intent}</span></div>
+                  <div style="width:40px"><span class="kw-diff ${kw.difficulty}">${kw.difficulty}</span></div>
+                  <div style="font-size:10px;font-family:var(--fm);color:var(--text2);width:50px;text-align:right">${kw.monthly_searches || '—'}</div>
+                  <div class="kw-opp">${kw.opportunity_score}</div>
+                </div>`).join('')}
+            </div>
+          </div>
+        </div>
+
+        <!-- Market Size -->
+        <div class="card">
+          <div class="card-head"><div class="card-label">🌐 Market Size</div></div>
+          <div class="card-body">
+            ${r.market_size ? `
+            <div class="market-grid">
+              <div class="market-item">
+                <div class="market-label">TAM</div>
+                <div class="market-val">${r.market_size.tam}</div>
+              </div>
+              <div class="market-item">
+                <div class="market-label">SAM</div>
+                <div class="market-val">${r.market_size.sam}</div>
+              </div>
+              <div class="market-item">
+                <div class="market-label">SOM</div>
+                <div class="market-val">${r.market_size.som}</div>
+              </div>
+            </div>
+            <div class="market-growth">↑ ${r.market_size.growth_rate}</div>` : '—'}
+
+            ${r.best_channels?.length ? `
+            <div style="margin-top:18px">
+              <div style="font-size:9px;font-family:var(--fm);color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px">Best Channels</div>
+              ${r.best_channels.map(c=>`
+                <div style="display:flex;align-items:center;gap:8px;padding:5px 0;font-size:11px;border-bottom:1px solid rgba(255,255,255,.04)">
+                  <span style="color:var(--accent)">→</span>
+                  <span style="color:var(--text2);font-family:var(--fm)">${c}</span>
+                </div>`).join('')}
+            </div>` : ''}
+
+            ${r.pain_points?.length ? `
+            <div style="margin-top:18px">
+              <div style="font-size:9px;font-family:var(--fm);color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px">Customer Pain Points</div>
+              ${r.pain_points.slice(0,4).map(p=>`
+                <div style="display:flex;align-items:flex-start;gap:8px;padding:5px 0;font-size:11px;color:var(--text2);border-bottom:1px solid rgba(255,255,255,.04);line-height:1.5">
+                  <span style="color:var(--red);flex-shrink:0;margin-top:1px">✕</span>
+                  <span style="font-family:var(--fm)">${p}</span>
+                </div>`).join('')}
+            </div>` : ''}
+          </div>
+        </div>
+      </div>
+
+      <!-- ROW 4: Action Plan + Summary -->
+      <div class="grid-2 fu fu-4">
+
+        <!-- Action Plan -->
+        <div class="card">
+          <div class="card-head">
+            <div class="card-label">💡 Action Plan</div>
+            <div style="font-size:10px;font-family:var(--fm);color:var(--teal)">${r.actionable_tips?.length || 0} steps</div>
+          </div>
+          <div class="card-body">
+            <ol class="action-list">
+              ${(r.actionable_tips || []).map(tip=>`<li class="action-item">${tip}</li>`).join('')}
+            </ol>
+          </div>
+        </div>
+
+        <!-- Summary -->
+        <div class="card">
+          <div class="card-head"><div class="card-label">📋 Executive Summary</div></div>
+          <div class="card-body">
+            <div class="summary-text">${r.summary || 'No summary available.'}</div>
+
+            <!-- Quick stats -->
+            <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center">
+                <div style="font-size:9px;font-family:var(--fm);color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:5px">Competitors</div>
+                <div style="font-size:24px;font-weight:800;font-family:var(--fs);color:var(--text)">${r.competitors?.length || 0}</div>
+              </div>
+              <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center">
+                <div style="font-size:9px;font-family:var(--fm);color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:5px">Keywords</div>
+                <div style="font-size:24px;font-weight:800;font-family:var(--fs);color:var(--text)">${r.keywords?.length || 0}</div>
+              </div>
+              <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center">
+                <div style="font-size:9px;font-family:var(--fm);color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:5px">Influencers</div>
+                <div style="font-size:24px;font-weight:800;font-family:var(--fs);color:var(--text)">${r.influencers?.length || 0}</div>
+              </div>
+              <div style="background:var(--adim);border:1px solid rgba(200,240,74,.2);border-radius:8px;padding:12px;text-align:center">
+                <div style="font-size:9px;font-family:var(--fm);color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:5px">Score</div>
+                <div style="font-size:24px;font-weight:800;font-family:var(--fs);color:var(--accent)">${r.growth_score}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- FOOTER -->
+    <div class="report-footer">
+      <div>Chamber Intelligence · ${date}</div>
+      <div>chamber.ai · AI-powered product analysis</div>
+    </div>
+  `;
+
+  // Animate bars after render
+  setTimeout(() => {
+    document.querySelectorAll('.sbd-fill, .reddit-fill, .angle-bar-fill').forEach(el => {
+      const w = el.style.width;
+      el.style.width = '0';
+      setTimeout(() => { el.style.width = w; }, 100);
+    });
+  }, 100);
+}
+
+// ─────────────────────────────────────────────────────
+// PDF EXPORT
+// ─────────────────────────────────────────────────────
+async function exportPDF() {
+  const btn = document.querySelector('.btn.accent');
+  const orig = btn.innerHTML;
+  btn.innerHTML = '⏳ Generating…';
+  btn.disabled = true;
+
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+    const r = report;
+    const sc = r.growth_score || 0;
+
+    // Fonts & colors
+    const BLACK = [8, 8, 7];
+    const ACCENT = [200, 240, 74];
+    const GRAY = [100, 100, 96];
+    const LIGHTGRAY = [40, 40, 38];
+
+    doc.setFillColor(...BLACK);
+    doc.rect(0, 0, 210, 297, 'F');
+
+    // Header
+    doc.setFillColor(...ACCENT);
+    doc.rect(0, 0, 210, 52, 'F');
+    doc.setTextColor(...BLACK);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(28);
+    doc.text(r.product_name || 'Analysis Report', 20, 22);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(r.category || '', 20, 30);
+    doc.text(`Chamber Intelligence · ${new Date().toLocaleDateString()}`, 20, 38);
+
+    // Score badge
+    doc.setFillColor(...BLACK);
+    doc.roundedRect(162, 8, 32, 32, 4, 4, 'F');
+    doc.setTextColor(...ACCENT);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(28);
+    doc.text(String(sc), 178, 28, { align: 'center' });
+    doc.setFontSize(7);
+    doc.text('GROWTH', 178, 34, { align: 'center' });
+    doc.text('SCORE', 178, 38, { align: 'center' });
+
+    let y = 62;
+
+    // Score breakdown
+    doc.setTextColor(200, 240, 74);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.text('SCORE BREAKDOWN', 20, y);
+    y += 5;
+    if (r.score_breakdown) {
+      Object.entries(r.score_breakdown).forEach(([k, v]) => {
+        doc.setTextColor(...GRAY);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.text(k.replace(/_/g, ' '), 20, y + 3);
+        doc.setFillColor(30, 30, 28);
+        doc.rect(70, y, 100, 4, 'F');
+        doc.setFillColor(...ACCENT);
+        doc.rect(70, y, v, 4, 'F');
+        doc.setTextColor(...ACCENT);
+        doc.text(String(v), 175, y + 3);
+        y += 8;
+      });
+    }
+    y += 6;
+
+    // Marketing Angles
+    doc.setTextColor(200, 240, 74);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.text('MARKETING ANGLES', 20, y);
+    y += 5;
+    (r.marketing_angles || []).forEach((a, i) => {
+      if (y > 260) { doc.addPage(); doc.setFillColor(...BLACK); doc.rect(0, 0, 210, 297, 'F'); y = 20; }
+      doc.setTextColor(200, 240, 74);
+      doc.setFontSize(7);
+      doc.text(`0${i + 1}`, 20, y + 3);
+      doc.setTextColor(242, 239, 231);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.text(a.title, 30, y + 3);
+      doc.setTextColor(...GRAY);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      const lines = doc.splitTextToSize(a.description, 150);
+      doc.text(lines, 30, y + 8);
+      y += 8 + (lines.length * 4) + 4;
+    });
+    y += 4;
+
+    // Competitors
+    if (y > 230) { doc.addPage(); doc.setFillColor(...BLACK); doc.rect(0, 0, 210, 297, 'F'); y = 20; }
+    doc.setTextColor(200, 240, 74);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.text('COMPETITORS', 20, y);
+    y += 5;
+    (r.competitors || []).forEach(c => {
+      if (y > 270) { doc.addPage(); doc.setFillColor(...BLACK); doc.rect(0, 0, 210, 297, 'F'); y = 20; }
+      const tl = c.threat_level || 0;
+      const tc = tl >= 7 ? [255, 92, 58] : tl >= 4 ? [255, 184, 48] : [58, 255, 212];
+      doc.setFillColor(...tc);
+      doc.roundedRect(20, y - 3, 14, 8, 1, 1, 'F');
+      doc.setTextColor(8, 8, 7);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7);
+      doc.text(`${tl}/10`, 27, y + 2, { align: 'center' });
+      doc.setTextColor(242, 239, 231);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.text(c.name, 38, y + 2);
+      doc.setTextColor(...GRAY);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.text(`${c.price} · Gap: ${c.weakness}`, 38, y + 7);
+      y += 14;
+    });
+
+    // Summary
+    if (y > 200) { doc.addPage(); doc.setFillColor(...BLACK); doc.rect(0, 0, 210, 297, 'F'); y = 20; }
+    y += 4;
+    doc.setTextColor(200, 240, 74);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.text('EXECUTIVE SUMMARY', 20, y);
+    y += 6;
+    doc.setTextColor(...GRAY);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    const summaryLines = doc.splitTextToSize(r.summary || '', 170);
+    doc.text(summaryLines, 20, y);
+    y += summaryLines.length * 4 + 8;
+
+    // Action Plan
+    if (y > 200) { doc.addPage(); doc.setFillColor(...BLACK); doc.rect(0, 0, 210, 297, 'F'); y = 20; }
+    doc.setTextColor(200, 240, 74);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.text('ACTION PLAN', 20, y);
+    y += 5;
+    (r.actionable_tips || []).forEach((tip, i) => {
+      if (y > 270) { doc.addPage(); doc.setFillColor(...BLACK); doc.rect(0, 0, 210, 297, 'F'); y = 20; }
+      doc.setTextColor(200, 240, 74);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.text(`${String(i + 1).padStart(2, '0')}`, 20, y + 3);
+      doc.setTextColor(...GRAY);
+      doc.setFont('helvetica', 'normal');
+      const tipLines = doc.splitTextToSize(tip, 158);
+      doc.text(tipLines, 28, y + 3);
+      y += tipLines.length * 4 + 5;
+    });
+
+    // Footer on last page
+    doc.setFillColor(200, 240, 74);
+    doc.rect(0, 287, 210, 10, 'F');
+    doc.setTextColor(8, 8, 7);
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Chamber Intelligence', 20, 293);
+    doc.text(`${r.product_name} · Growth Score: ${sc}/100`, 210, 293, { align: 'right' });
+
+    doc.save(`chamber-${(r.product_name || 'report').toLowerCase().replace(/\s+/g, '-')}.pdf`);
+  } catch (e) {
+    alert('PDF export error: ' + e.message);
+  }
+
+  btn.innerHTML = orig;
+  btn.disabled = false;
+}
+
+// ─────────────────────────────────────────────────────
+// BOOT
+// ─────────────────────────────────────────────────────
+loadData();
+if (report) {
+  render(report);
+} else {
+  document.getElementById('app').innerHTML = `
+    <div class="empty-state">
+      <div class="empty-icon">📊</div>
+      <div class="empty-title">No report data</div>
+      <div class="empty-sub">Run an analysis in the dashboard to generate a report</div>
+      <a href="app.html" class="btn accent" style="margin-top:8px">← Back to Dashboard</a>
+    </div>`;
+}
+</script>
+</body>
+</html>

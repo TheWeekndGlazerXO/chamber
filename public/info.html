@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Chamber · How to Use</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Fraunces:ital,wght@0,300;0,700;1,200;1,700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#080807;--bg2:#0f0f0d;--bg3:#181816;--bg4:#1e1e1c;
+  --border:rgba(255,255,255,.06);--border2:rgba(255,255,255,.12);
+  --text:#F2EFE7;--text2:#8C8A82;--text3:#4A4845;
+  --accent:#C8F04A;--accent2:#A8D030;--adim:rgba(200,240,74,.09);
+  --red:#FF5C3A;--teal:#3AFFD4;--amber:#FFB830;
+  --fd:'Syne',sans-serif;--fm:'DM Mono',monospace;--fs:'Fraunces',serif;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--fd);-webkit-font-smoothing:antialiased}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:2px}
+
+/* NAV */
+.nav{position:sticky;top:0;z-index:100;background:rgba(8,8,7,.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 40px;height:52px;display:flex;align-items:center;justify-content:space-between}
+.logo{display:flex;align-items:center;gap:8px;text-decoration:none;color:var(--text);font-size:15px;font-weight:800;letter-spacing:-.4px}
+.logo-hex{width:24px;height:24px;background:var(--accent);border-radius:5px;display:flex;align-items:center;justify-content:center}
+.logo em{color:var(--accent);font-style:normal}
+.nav-r{display:flex;align-items:center;gap:8px}
+.btn{font-family:var(--fd);font-size:12px;font-weight:600;padding:7px 14px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;transition:all .15s;text-decoration:none;display:inline-flex;align-items:center;gap:5px}
+.btn:hover{color:var(--text);background:var(--bg3)}
+.btn.accent{background:var(--accent);color:#080807;border-color:var(--accent);font-weight:700}
+.btn.accent:hover{background:var(--accent2)}
+
+/* HERO */
+.hero{padding:72px 40px 56px;max-width:800px;margin:0 auto;text-align:center}
+.hero-chip{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-family:var(--fm);color:var(--teal);border:1px solid rgba(58,255,212,.2);border-radius:100px;padding:4px 12px;margin-bottom:20px;letter-spacing:.06em;text-transform:uppercase}
+.hero-title{font-family:var(--fs);font-size:clamp(40px,6vw,64px);font-weight:700;font-style:italic;letter-spacing:-2px;line-height:1;margin-bottom:16px}
+.hero-sub{font-size:15px;color:var(--text2);line-height:1.7;max-width:520px;margin:0 auto}
+
+/* QUICK NAV */
+.quick-nav{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;padding:0 40px 48px;max-width:800px;margin:0 auto}
+.qn-btn{font-size:11px;font-family:var(--fm);padding:6px 14px;border-radius:100px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;transition:all .15s;text-decoration:none}
+.qn-btn:hover{border-color:rgba(200,240,74,.3);color:var(--accent);background:var(--adim)}
+
+/* PAGE */
+.page{max-width:800px;margin:0 auto;padding:0 40px 100px}
+
+/* SECTION */
+.section{margin-bottom:64px}
+.section-header{display:flex;align-items:center;gap:12px;margin-bottom:28px;padding-bottom:16px;border-bottom:1px solid var(--border)}
+.section-num{width:32px;height:32px;border-radius:8px;background:var(--adim);border:1px solid rgba(200,240,74,.2);display:flex;align-items:center;justify-content:center;font-size:12px;font-family:var(--fm);font-weight:700;color:var(--accent);flex-shrink:0}
+.section-title{font-size:22px;font-weight:800;letter-spacing:-.5px}
+.section-sub{font-size:13px;color:var(--text2);margin-top:3px}
+
+/* STEP CARDS */
+.steps{display:flex;flex-direction:column;gap:12px}
+.step{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:18px 20px;display:flex;gap:16px;align-items:flex-start;transition:border-color .15s}
+.step:hover{border-color:var(--border2)}
+.step-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;background:var(--bg3);border:1px solid var(--border)}
+.step-title{font-size:14px;font-weight:700;margin-bottom:4px;letter-spacing:-.2px}
+.step-desc{font-size:12px;color:var(--text2);line-height:1.65;font-family:var(--fm)}
+.step-tip{font-size:11px;font-family:var(--fm);color:var(--teal);margin-top:6px;display:flex;align-items:flex-start;gap:5px}
+.step-tip::before{content:'💡';flex-shrink:0}
+
+/* FEATURE GRID */
+.feat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.feat-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px}
+.feat-card-icon{font-size:18px;margin-bottom:6px}
+.feat-card-name{font-size:13px;font-weight:700;margin-bottom:3px}
+.feat-card-desc{font-size:11px;color:var(--text2);line-height:1.55;font-family:var(--fm)}
+.feat-card-plan{display:inline-block;font-size:9px;font-family:var(--fm);font-weight:700;padding:2px 7px;border-radius:3px;margin-top:5px}
+.fp-free{background:rgba(85,84,80,.2);color:var(--text2)}
+.fp-starter{background:rgba(74,144,226,.15);color:#4A90E2}
+.fp-growth{background:var(--adim);color:var(--accent)}
+.fp-scale{background:rgba(58,255,212,.1);color:var(--teal)}
+
+/* KV */
+.kv-list{display:flex;flex-direction:column;gap:0}
+.kv{display:flex;align-items:flex-start;gap:14px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.kv:last-child{border-bottom:none}
+.kv-key{font-size:12px;font-weight:700;min-width:140px;flex-shrink:0}
+.kv-val{font-size:12px;color:var(--text2);font-family:var(--fm);line-height:1.6}
+
+/* CODE BLOCK */
+.code{background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:12px 14px;font-size:11px;font-family:var(--fm);color:var(--teal);line-height:1.7;margin:10px 0}
+
+/* CALLOUT */
+.callout{background:rgba(200,240,74,.05);border:1px solid rgba(200,240,74,.15);border-left:3px solid var(--accent);border-radius:0 7px 7px 0;padding:12px 16px;margin:16px 0}
+.callout-title{font-size:12px;font-weight:700;color:var(--accent);margin-bottom:4px}
+.callout-body{font-size:12px;color:var(--text2);font-family:var(--fm);line-height:1.65}
+
+.callout.teal{background:rgba(58,255,212,.04);border-color:rgba(58,255,212,.15);border-left-color:var(--teal)}
+.callout.teal .callout-title{color:var(--teal)}
+.callout.amber{background:rgba(255,184,48,.04);border-color:rgba(255,184,48,.15);border-left-color:var(--amber)}
+.callout.amber .callout-title{color:var(--amber)}
+
+/* PLAN PILLS */
+.plan-pills{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.plan-pill{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px 16px;flex:1;min-width:140px}
+.pp-name{font-size:10px;font-family:var(--fm);font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px}
+.pp-price{font-size:20px;font-weight:800;letter-spacing:-1px;margin-bottom:4px}
+.pp-reports{font-size:11px;font-family:var(--fm);color:var(--text2)}
+.pp-cta{display:block;width:100%;margin-top:10px;font-size:11px;font-family:var(--fd);font-weight:700;padding:7px;border-radius:6px;border:none;cursor:pointer;text-align:center;text-decoration:none;transition:all .15s}
+.pp-cta.free-cta{background:var(--bg4);color:var(--text2);border:1px solid var(--border)}
+.pp-cta.starter-cta{background:rgba(74,144,226,.15);color:#4A90E2;border:1px solid rgba(74,144,226,.2)}
+.pp-cta.growth-cta{background:var(--adim);color:var(--accent);border:1px solid rgba(200,240,74,.2)}
+.pp-cta.scale-cta{background:rgba(58,255,212,.1);color:var(--teal);border:1px solid rgba(58,255,212,.2)}
+
+/* FAQ */
+.faq-item{border-bottom:1px solid var(--border);padding:14px 0;cursor:pointer}
+.faq-q{font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.faq-icon{font-size:16px;color:var(--text3);transition:transform .2s;flex-shrink:0}
+.faq-item.open .faq-icon{transform:rotate(45deg);color:var(--accent)}
+.faq-a{font-size:13px;color:var(--text2);font-family:var(--fm);line-height:1.7;margin-top:10px;display:none}
+.faq-item.open .faq-a{display:block}
+
+/* ANIMATIONS */
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.fu{animation:fadeUp .4s ease both}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="app.html" class="logo">
+    <div class="logo-hex"><svg viewBox="0 0 16 16" fill="none" width="11" height="11"><polygon points="8,1 15,5 15,11 8,15 1,11 1,5" fill="#080807"/></svg></div>
+    Chamber<em>.</em>
+  </a>
+  <div class="nav-r">
+    <a href="app.html" class="btn">← Dashboard</a>
+    <a href="pricing.html" class="btn accent">Upgrade plan</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero fu">
+  <div class="hero-chip">📖 How to use Chamber</div>
+  <h1 class="hero-title">Get the most out of your AI research engine</h1>
+  <p class="hero-sub">Everything you need to know — from running your first analysis to unlocking 50+ features across all tiers.</p>
+</div>
+
+<!-- QUICK NAV -->
+<div class="quick-nav">
+  <a href="#getting-started" class="qn-btn">Getting started</a>
+  <a href="#full-analysis" class="qn-btn">Full Analysis</a>
+  <a href="#features" class="qn-btn">50+ Features</a>
+  <a href="#tiers" class="qn-btn">Plan tiers</a>
+  <a href="#tips" class="qn-btn">Pro tips</a>
+  <a href="#faq" class="qn-btn">FAQ</a>
+</div>
+
+<div class="page">
+
+  <!-- SECTION 1: GETTING STARTED -->
+  <div class="section" id="getting-started">
+    <div class="section-header">
+      <div class="section-num">01</div>
+      <div>
+        <div class="section-title">Getting started</div>
+        <div class="section-sub">You're in. Here's the 3-minute setup.</div>
+      </div>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-icon">🏠</div>
+        <div>
+          <div class="step-title">Your dashboard is your home base</div>
+          <div class="step-desc">The dashboard shows your recent analyses, quick-start feature cards, and usage tracker at the top. The sidebar on the left (click ◫) reveals all 50+ features organized by category.</div>
+          <div class="step-tip">The ⌕ Search bar (or ⌘K) lets you jump to any feature in under 2 seconds.</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-icon">⚡</div>
+        <div>
+          <div class="step-title">Run your first Full Analysis</div>
+          <div class="step-desc">Click the ⚡ icon in the left rail, type a product name (e.g. "Wireless Earbuds Pro"), and hit Generate. Takes 20–60 seconds. Chamber runs 6 intelligence modules simultaneously — Reddit, web search, competitor research, AI scoring, influencer matching, and action planning.</div>
+          <div class="step-tip">Add a product URL and target audience for significantly more precise results.</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-icon">📊</div>
+        <div>
+          <div class="step-title">Read your Growth Score</div>
+          <div class="step-desc">Your Growth Score (0–100) is the headline number — it combines market timing, search demand, competition gap, audience fit, and trend momentum. 80+ is a strong signal. 60–80 needs validation. Under 60 requires a pivot.</div>
+          <div class="step-tip">Click "Open Full Report →" in the output header to see the full report.html view with PDF export.</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-icon">📋</div>
+        <div>
+          <div class="step-title">Access history and past reports</div>
+          <div class="step-desc">Click "History" in the top bar to pull up your analysis drawer. All past analyses are saved automatically and accessible from the dashboard home screen. Click any report to reload it in the output pane.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 2: FULL ANALYSIS -->
+  <div class="section" id="full-analysis">
+    <div class="section-header">
+      <div class="section-num">02</div>
+      <div>
+        <div class="section-title">Understanding the Full Analysis</div>
+        <div class="section-sub">What each module does and how to act on it.</div>
+      </div>
+    </div>
+
+    <div class="kv-list">
+      <div class="kv">
+        <div class="kv-key">📊 Growth Score</div>
+        <div class="kv-val">Composite 0–100 based on 5 weighted factors. Use it as a quick go/no-go signal. Don't launch anything under 55 without a differentiated angle.</div>
+      </div>
+      <div class="kv">
+        <div class="kv-key">🎯 Marketing Angles</div>
+        <div class="kv-val">4–6 positioning angles ranked by strength (1–5). The top angle should become your hero headline. Test 2–3 angles in your first ad split test.</div>
+      </div>
+      <div class="kv">
+        <div class="kv-key">🔍 Competitors</div>
+        <div class="kv-val">Each competitor shows a threat level (0–10) and a Gap — the specific weakness you can exploit. The Gap column is where you find your winning angle.</div>
+      </div>
+      <div class="kv">
+        <div class="kv-key">📊 Reddit Sentiment</div>
+        <div class="kv-val">Real community opinions pulled from relevant subreddits. The Key Themes are the exact phrases your customers use — paste them directly into ad copy for higher CTR.</div>
+      </div>
+      <div class="kv">
+        <div class="kv-key">🤳 Influencer Matches</div>
+        <div class="kv-val">Micro-influencers sorted by match score. Send DMs to the top 3 — micro-influencers (under 100k) typically have 3–5x better engagement and accept commission deals.</div>
+      </div>
+      <div class="kv">
+        <div class="kv-key">💡 Action Plan</div>
+        <div class="kv-val">7 prioritized next steps. Do them in order. They're sequenced from cheapest/fastest to highest leverage, not alphabetically.</div>
+      </div>
+    </div>
+
+    <div class="callout" style="margin-top:20px">
+      <div class="callout-title">📄 Full Report View</div>
+      <div class="callout-body">After any analysis, click "Open Full Report →" in the output header. This opens report.html with a full-page view including keywords, market sizing, and PDF export. Store it in sessionStorage so you can share the URL or download the PDF.</div>
+    </div>
+  </div>
+
+  <!-- SECTION 3: FEATURES -->
+  <div class="section" id="features">
+    <div class="section-header">
+      <div class="section-num">03</div>
+      <div>
+        <div class="section-title">50+ Feature tools</div>
+        <div class="section-sub">Use individual tools without spending an analysis credit.</div>
+      </div>
+    </div>
+
+    <p style="font-size:13px;color:var(--text2);font-family:var(--fm);line-height:1.7;margin-bottom:20px">Individual feature tools don't count against your monthly analysis limit. Only running a Full Analysis uses a credit. Browse features by clicking ◫ Browse in the left rail.</p>
+
+    <div class="feat-grid">
+      <div class="feat-card">
+        <div class="feat-card-icon">🎯</div>
+        <div class="feat-card-name">Ad Copy</div>
+        <div class="feat-card-desc">4 platform-specific ads with hook classification. Paste directly into your ad manager.</div>
+        <span class="feat-card-plan fp-starter">Starter+</span>
+      </div>
+      <div class="feat-card">
+        <div class="feat-card-icon">📧</div>
+        <div class="feat-card-name">Email Sequences</div>
+        <div class="feat-card-desc">5-email flows for welcome, abandoned cart, post-purchase, winback, and launch.</div>
+        <span class="feat-card-plan fp-starter">Starter+</span>
+      </div>
+      <div class="feat-card">
+        <div class="feat-card-icon">🔑</div>
+        <div class="feat-card-name">SEO Keywords</div>
+        <div class="feat-card-desc">20 keywords with intent, difficulty, monthly volume, and opportunity score. Sort by opportunity first.</div>
+        <span class="feat-card-plan fp-starter">Starter+</span>
+      </div>
+      <div class="feat-card">
+        <div class="feat-card-icon">🎣</div>
+        <div class="feat-card-name">Viral Hooks</div>
+        <div class="feat-card-desc">10 hooks with psychological type (curiosity, fear, authority) and predicted CTR. Use as TikTok openers.</div>
+        <span class="feat-card-plan fp-free">Free</span>
+      </div>
+      <div class="feat-card">
+        <div class="feat-card-icon">🧮</div>
+        <div class="feat-card-name">Margin Calculator</div>
+        <div class="feat-card-desc">True unit economics — gross profit, margin %, break-even units, 3-month LTV. No AI required.</div>
+        <span class="feat-card-plan fp-free">Free</span>
+      </div>
+      <div class="feat-card">
+        <div class="feat-card-icon">🗺️</div>
+        <div class="feat-card-name">Go-To-Market</div>
+        <div class="feat-card-desc">Phased launch plan with channels, tactics, KPIs, and quick wins. Don't skip phases.</div>
+        <span class="feat-card-plan fp-growth">Growth+</span>
+      </div>
+      <div class="feat-card">
+        <div class="feat-card-icon">🎵</div>
+        <div class="feat-card-name">TikTok Calendar</div>
+        <div class="feat-card-desc">30-day content calendar with themes, hooks, formats, and hashtags. Schedule 1 week ahead.</div>
+        <span class="feat-card-plan fp-growth">Growth+</span>
+      </div>
+      <div class="feat-card">
+        <div class="feat-card-icon">⚖️</div>
+        <div class="feat-card-name">SWOT Analysis</div>
+        <div class="feat-card-desc">Full SWOT with strategic actions combining all 4 quadrants. Run quarterly.</div>
+        <span class="feat-card-plan fp-starter">Starter+</span>
+      </div>
+    </div>
+
+    <div class="callout teal" style="margin-top:20px">
+      <div class="callout-title">🔍 Finding the right feature</div>
+      <div class="callout-body">Press ⌘K (or click Search in the topbar) and type what you need. "email", "competitor", "TikTok" — the command palette searches all 50+ features instantly. Alternatively, click ◫ Browse and use the filter box.</div>
+    </div>
+  </div>
+
+  <!-- SECTION 4: PLAN TIERS -->
+  <div class="section" id="tiers">
+    <div class="section-header">
+      <div class="section-num">04</div>
+      <div>
+        <div class="section-title">Plan tiers</div>
+        <div class="section-sub">What unlocks at each level.</div>
+      </div>
+    </div>
+
+    <div class="plan-pills">
+      <div class="plan-pill">
+        <div class="pp-name" style="color:var(--text2)">Free</div>
+        <div class="pp-price" style="color:var(--text)">$0</div>
+        <div class="pp-reports">1 analysis / month</div>
+        <div style="font-size:11px;color:var(--text3);font-family:var(--fm);margin-top:8px;line-height:1.6">Core analysis · Growth score · Competitors · Brand names · FAQ · Viral hooks · Margin calc · Launch checklist</div>
+        <a href="app.html" class="pp-cta free-cta">Current (free)</a>
+      </div>
+      <div class="plan-pill" style="border-color:rgba(74,144,226,.2)">
+        <div class="pp-name" style="color:#4A90E2">Starter</div>
+        <div class="pp-price" style="color:#4A90E2">$29.99</div>
+        <div class="pp-reports">5 analyses / month</div>
+        <div style="font-size:11px;color:var(--text3);font-family:var(--fm);margin-top:8px;line-height:1.6">+ Ad copy · Email sequences · SEO keywords · Market size · Amazon listing · SWOT · Personas · Reddit sentiment · Influencer matching</div>
+        <a href="pricing.html" class="pp-cta starter-cta">Upgrade to Starter</a>
+      </div>
+      <div class="plan-pill" style="border-color:rgba(200,240,74,.2)">
+        <div class="pp-name" style="color:var(--accent)">Growth</div>
+        <div class="pp-price" style="color:var(--accent)">$59.99</div>
+        <div class="pp-reports">25 analyses / month</div>
+        <div style="font-size:11px;color:var(--text3);font-family:var(--fm);margin-top:8px;line-height:1.6">+ GTM strategy · TikTok calendar · Competitor ads · A/B tests · Pricing strategy · Press release · Landing page copy · UGC brief</div>
+        <a href="pricing.html" class="pp-cta growth-cta">Upgrade to Growth</a>
+      </div>
+      <div class="plan-pill" style="border-color:rgba(58,255,212,.2)">
+        <div class="pp-name" style="color:var(--teal)">Scale</div>
+        <div class="pp-price" style="color:var(--teal)">$129.99</div>
+        <div class="pp-reports">Unlimited</div>
+        <div style="font-size:11px;color:var(--text3);font-family:var(--fm);margin-top:8px;line-height:1.6">+ White label · Product roadmap · API access · 5 team seats · Full business validation · Customer journey</div>
+        <a href="pricing.html" class="pp-cta scale-cta">Upgrade to Scale</a>
+      </div>
+    </div>
+
+    <div class="callout amber" style="margin-top:20px">
+      <div class="callout-title">🎁 Referral reward</div>
+      <div class="callout-body">Get 3 friends to purchase any paid plan using your referral code → you unlock 2 months of Growth free ($120 value). Your friends get 50% off their first month. Find your code in Profile → Referral Program.</div>
+    </div>
+  </div>
+
+  <!-- SECTION 5: PRO TIPS -->
+  <div class="section" id="tips">
+    <div class="section-header">
+      <div class="section-num">05</div>
+      <div>
+        <div class="section-title">Pro tips</div>
+        <div class="section-sub">How to get 10x more value from Chamber.</div>
+      </div>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-icon">🎯</div>
+        <div>
+          <div class="step-title">Add audience context for better results</div>
+          <div class="step-desc">Instead of just "Wireless Earbuds", try "Wireless Earbuds Pro — Target audience: Remote workers 25-40 who take 5+ calls/day". The AI tailors every module — marketing angles, influencer selection, Reddit sentiment — to your specific buyer.</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-icon">🔗</div>
+        <div>
+          <div class="step-title">Chain features together</div>
+          <div class="step-desc">Run Full Analysis → copy the marketing angle title → paste it into Ad Copy → take the top ad headline → run it through Viral Hooks for TikTok. The output of one feature feeds the next. This is how you build a full launch campaign in 20 minutes.</div>
+          <div class="step-tip">The margin calculator is separate from AI limits — use it as many times as you want.</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-icon">📤</div>
+        <div>
+          <div class="step-title">Export and share reports</div>
+          <div class="step-desc">After any analysis, click "Open Full Report →" to get the full-page view. From there, hit "Export PDF" for a branded PDF to share with co-founders, investors, or clients. The "Copy JSON" and "Copy MD" buttons in the output pane let you pipe data into other tools.</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-icon">🔴</div>
+        <div>
+          <div class="step-title">Use Reddit sentiment as ad copy source</div>
+          <div class="step-desc">The Key Themes from Reddit sentiment are exact phrases your customers use organically. These perform 2–3x better in ad headlines than agency-written copy because they're already in your customer's vocabulary.</div>
+          <div class="step-tip">Sort sample posts by upvotes — high-upvote posts signal which pain points resonate most.</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-icon">📊</div>
+        <div>
+          <div class="step-title">Run analyses monthly, not once</div>
+          <div class="step-desc">Markets shift. Run a new full analysis every 30 days to catch trend velocity changes, new competitors, and seasonal shifts before they hurt you. The History drawer makes it easy to compare across time.</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-icon">💰</div>
+        <div>
+          <div class="step-title">Always run the Margin Calculator first</div>
+          <div class="step-desc">Before you run any analysis on a product, calculate your true unit economics. If your gross profit is negative after fees, ads, and returns, no amount of marketing intelligence will save the business. Fix the economics first.</div>
+          <div class="step-tip">Include platform fees (15% Amazon/Etsy), ad spend (15–25% of revenue), and returns (5–12% depending on category).</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 6: FAQ -->
+  <div class="section" id="faq">
+    <div class="section-header">
+      <div class="section-num">06</div>
+      <div>
+        <div class="section-title">FAQ</div>
+        <div class="section-sub">Common questions.</div>
+      </div>
+    </div>
+
+    <div id="faq-list"></div>
+  </div>
+
+</div>
+
+<script>
+const faqs = [
+  { q: "Does using a feature tool count against my monthly limit?", a: "No. Only running a Full Analysis (⚡ in the left rail) uses one of your monthly credits. Individual tools like Ad Copy, Email Sequences, FAQ Generator, etc. are unlimited — they only have a per-minute rate limit to prevent abuse." },
+  { q: "Why did my analysis fail or return an error?", a: "Most common causes: (1) GITHUB_TOKEN not set in .env — this powers the AI. (2) Network timeout — analyses can take up to 60 seconds. (3) Monthly limit reached — check your usage counter in the top bar. Try again in a minute." },
+  { q: "How accurate is the Reddit sentiment data?", a: "Chamber uses the real Reddit API to pull posts from relevant subreddits in real-time. The sentiment analysis is then run by GPT-4o. It's real data — but the subreddits chosen depend on your product category input, so more specific descriptions yield better results." },
+  { q: "Can I use Chamber for any type of product?", a: "Chamber is optimized for DTC ecommerce, SaaS products, and consumer goods. It works for physical products, digital products, and service businesses. For highly niche B2B products, the competitor and influencer data may be less specific — adding more context in the Target Audience field helps significantly." },
+  { q: "How do I use my referral code for 50% off?", a: "When upgrading, the referral code field appears at Stripe checkout. If you have a friend's referral code, enter it there for 50% off your first month. Your own code is in Profile → Referral Program." },
+  { q: "What data does Chamber actually fetch live vs generate?", a: "Live fetched (if API keys set): Reddit posts, Google search snippets (Serper), news headlines (NewsAPI), YouTube videos. AI-generated from context: marketing angles, competitors, influencer suggestions, action plans, keywords. The Growth Score uses both real data and AI synthesis." },
+  { q: "Can I export reports to share with my team?", a: "Yes. Click 'Open Full Report →' after any analysis to get the full report.html view. From there, use 'Export PDF' for a downloadable branded report. You can also use 'Copy JSON' to pipe data into spreadsheets or other tools." },
+  { q: "Why does Full Analysis take 20–60 seconds?", a: "Chamber runs 6 modules in parallel — Reddit API, Google search, News API, and the AI analysis. The AI call itself (GPT-4o) typically takes 10–30 seconds. External API calls add additional time. The loading state shows 'Running 6 modules...' to confirm it's working." },
+];
+
+document.getElementById('faq-list').innerHTML = faqs.map((f,i)=>`
+  <div class="faq-item" onclick="toggleFaq(${i})">
+    <div class="faq-q">${f.q}<div class="faq-icon">+</div></div>
+    <div class="faq-a">${f.a}</div>
+  </div>`).join('');
+
+function toggleFaq(i) {
+  document.querySelectorAll('.faq-item')[i].classList.toggle('open');
+}
+</script>
+</body>
+</html>

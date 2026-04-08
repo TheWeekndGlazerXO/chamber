@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Chamber — Let's get started</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Fraunces:ital,wght@0,400;1,300;1,700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0A0A08;--bg2:#111110;--bg3:#1A1A18;--bg4:#222220;--border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.13);--text:#F2EFE7;--text2:#8C8A82;--text3:#545250;--accent:#C8F04A;--accent2:#A8D030;--adim:rgba(200,240,74,.09);--adim2:rgba(200,240,74,.05);--red:#FF5C3A;--teal:#3AFFD4;--amber:#FFB830;--fd:'Syne',sans-serif;--fm:'DM Mono',monospace;--fs:'Fraunces',serif}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:var(--fd);-webkit-font-smoothing:antialiased;display:flex;flex-direction:column}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:2px}
+
+/* GRID BG */
+.bg-grid{position:fixed;inset:0;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:60px 60px;mask-image:radial-gradient(ellipse 80% 80% at 50% 50%,black 20%,transparent 100%);-webkit-mask-image:radial-gradient(ellipse 80% 80% at 50% 50%,black 20%,transparent 100%);pointer-events:none;z-index:0}
+.bg-glow{position:fixed;top:0;left:50%;transform:translateX(-50%);width:700px;height:400px;background:radial-gradient(ellipse,rgba(200,240,74,.07) 0%,transparent 70%);pointer-events:none;z-index:0}
+
+/* TOP NAV */
+.onb-nav{height:54px;display:flex;align-items:center;justify-content:space-between;padding:0 32px;border-bottom:1px solid var(--border);flex-shrink:0;position:relative;z-index:10}
+.logo{display:flex;align-items:center;gap:8px;font-size:16px;font-weight:800;text-decoration:none;color:var(--text)}
+.logo-hex{width:26px;height:26px;background:var(--accent);border-radius:5px;display:flex;align-items:center;justify-content:center}
+.logo em{color:var(--accent);font-style:normal}
+.skip-btn{font-size:12px;font-family:var(--fm);color:var(--text3);cursor:pointer;transition:color .15s;background:none;border:none}
+.skip-btn:hover{color:var(--text2)}
+
+/* PROGRESS BAR */
+.progress-wrap{height:3px;background:var(--bg3);flex-shrink:0;position:relative;z-index:10}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--teal),var(--accent));transition:width .5s cubic-bezier(.4,0,.2,1)}
+
+/* STEP INDICATORS */
+.step-dots{display:flex;align-items:center;justify-content:center;gap:6px;padding:16px 0 0;flex-shrink:0;position:relative;z-index:10}
+.sdot{width:6px;height:6px;border-radius:50%;background:var(--bg4);border:1px solid var(--border2);transition:all .3s}
+.sdot.done{background:rgba(200,240,74,.4);border-color:rgba(200,240,74,.3)}
+.sdot.act{width:20px;border-radius:3px;background:var(--accent);border-color:var(--accent)}
+
+/* MAIN */
+.onb-main{flex:1;overflow:hidden;display:flex;align-items:center;justify-content:center;padding:24px;position:relative;z-index:1}
+.step-container{width:100%;max-width:580px}
+
+/* STEP PANELS */
+.step{display:none;animation:stepIn .35s cubic-bezier(.34,1.1,.64,1) both}
+.step.active{display:block}
+@keyframes stepIn{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:translateX(0)}}
+@keyframes stepOut{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(-24px)}}
+.step.leaving{display:block;animation:stepOut .2s ease forwards}
+
+.step-label{font-size:10px;font-family:var(--fm);color:var(--accent);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.step-label::before{content:'';width:14px;height:1px;background:var(--accent)}
+.step-title{font-size:clamp(22px,4vw,34px);font-weight:800;letter-spacing:-.6px;line-height:1.1;margin-bottom:10px}
+.step-title em{font-family:var(--fs);font-style:italic;font-weight:400;color:var(--accent)}
+.step-sub{font-size:14px;color:var(--text2);line-height:1.65;margin-bottom:28px;max-width:460px}
+
+/* FORM ELEMENTS */
+.field{margin-bottom:16px}
+.field label{display:block;font-size:10px;font-family:var(--fm);color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px}
+.field input,.field select,.field textarea{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px 14px;font-size:14px;font-family:var(--fd);color:var(--text);outline:none;transition:all .2s}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:rgba(200,240,74,.4);background:var(--bg4);box-shadow:0 0 0 3px rgba(200,240,74,.06)}
+.field input::placeholder,.field textarea::placeholder{color:var(--text3)}
+.field select{cursor:pointer}
+.field select option{background:var(--bg3)}
+.field textarea{resize:none;min-height:90px}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* CHOICE GRID */
+.choice-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px}
+.choice{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:16px;cursor:pointer;transition:all .2s;position:relative}
+.choice:hover{border-color:var(--border2);background:var(--bg4)}
+.choice.selected{border-color:rgba(200,240,74,.35);background:var(--adim2)}
+.choice.selected::after{content:'✓';position:absolute;top:10px;right:12px;width:16px;height:16px;border-radius:50%;background:var(--accent);color:#0A0A08;font-size:9px;font-weight:900;display:flex;align-items:center;justify-content:center}
+.choice-icon{font-size:22px;margin-bottom:8px}
+.choice-name{font-size:13px;font-weight:700;margin-bottom:3px}
+.choice-desc{font-size:11px;color:var(--text2);line-height:1.5}
+
+/* GOAL PILLS */
+.goal-pills{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px}
+.gpill{font-size:12px;font-family:var(--fm);font-weight:500;padding:7px 14px;border-radius:7px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;transition:all .15s}
+.gpill:hover{color:var(--text);border-color:var(--border3,var(--border2));background:var(--bg3)}
+.gpill.sel{background:var(--adim);border-color:rgba(200,240,74,.3);color:var(--accent)}
+
+/* REFERRAL */
+.ref-box{background:rgba(200,240,74,.04);border:1px solid rgba(200,240,74,.15);border-radius:10px;padding:18px;margin-bottom:20px}
+.ref-label{font-size:10px;font-family:var(--fm);color:var(--accent);letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px}
+.ref-input-row{display:flex;gap:8px}
+.ref-input{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:10px 14px;font-size:14px;font-family:var(--fm);color:var(--text);outline:none;transition:all .2s;letter-spacing:2px;text-transform:uppercase}
+.ref-input:focus{border-color:rgba(200,240,74,.4)}
+.ref-input::placeholder{letter-spacing:0;text-transform:none;color:var(--text3)}
+.ref-apply{font-size:12px;font-family:var(--fd);font-weight:700;padding:10px 16px;border-radius:7px;background:var(--accent);color:#0A0A08;border:none;cursor:pointer;white-space:nowrap;transition:all .15s}
+.ref-apply:hover{background:var(--accent2)}
+.ref-status{font-size:11px;font-family:var(--fm);margin-top:8px;min-height:16px}
+.ref-ok{color:var(--accent)}
+.ref-err{color:var(--red)}
+
+/* PRODUCT ANALYSIS STEP */
+.analyze-preview{background:var(--bg2);border:1px solid rgba(200,240,74,.15);border-radius:12px;padding:20px;margin-bottom:20px}
+.ap-title{font-size:13px;font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.ap-sub{font-size:11px;color:var(--text2);margin-bottom:14px;font-family:var(--fm)}
+.ap-modules{display:flex;flex-wrap:wrap;gap:6px}
+.apm{font-size:10px;font-family:var(--fm);padding:3px 9px;border-radius:5px;background:var(--bg4);border:1px solid var(--border);color:var(--text3)}
+.apm.active{background:var(--adim);border-color:rgba(200,240,74,.2);color:var(--accent)}
+
+/* LOADING ANALYSIS */
+.analysis-loading{text-align:center;padding:20px 0}
+.al-spinner{width:40px;height:40px;border:2px solid var(--bg3);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 14px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.al-status{font-size:12px;font-family:var(--fm);color:var(--text2);margin-bottom:6px}
+.al-sub{font-size:11px;font-family:var(--fm);color:var(--text3)}
+.al-bar{width:100%;height:2px;background:var(--bg3);border-radius:1px;overflow:hidden;margin-top:12px}
+.al-fill{height:100%;background:linear-gradient(90deg,var(--teal),var(--accent));border-radius:1px;width:0;transition:width .5s ease}
+
+/* RESULT PREVIEW */
+.result-preview{background:var(--bg2);border:1px solid rgba(200,240,74,.2);border-radius:12px;overflow:hidden;margin-bottom:20px}
+.rp-head{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.rp-score{font-size:32px;font-weight:800;letter-spacing:-2px;font-family:var(--fs)}
+.rp-name{font-size:15px;font-weight:700;margin-bottom:2px}
+.rp-cat{font-size:11px;font-family:var(--fm);color:var(--text3)}
+.rp-body{padding:14px 18px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.rp-mini{background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:10px 12px}
+.rp-mini-label{font-size:9px;font-family:var(--fm);color:var(--text3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:6px}
+.rp-mini-val{font-size:12px;color:var(--text2);line-height:1.55}
+.rp-mini-val li{list-style:none;padding:2px 0;display:flex;gap:6px;align-items:flex-start}
+.rp-mini-val li::before{content:'→';color:var(--accent);font-size:10px;flex-shrink:0;margin-top:1px}
+
+/* NAV BUTTONS */
+.step-nav{display:flex;align-items:center;gap:10px}
+.btn-next{flex:1;background:var(--accent);color:#0A0A08;font-family:var(--fd);font-size:14px;font-weight:700;padding:13px 20px;border-radius:8px;border:none;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-next:hover{background:var(--accent2);transform:translateY(-1px)}
+.btn-next:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.btn-back{font-size:13px;font-family:var(--fd);font-weight:600;padding:12px 18px;border-radius:8px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn-back:hover{color:var(--text);background:var(--bg3)}
+
+.spin-sm{width:14px;height:14px;border:2px solid rgba(0,0,0,.15);border-top-color:#0A0A08;border-radius:50%;animation:spin .5s linear infinite;display:inline-block}
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="bg-glow"></div>
+
+<nav class="onb-nav">
+  <a href="index.html" class="logo">
+    <div class="logo-hex"><svg viewBox="0 0 16 16" fill="none" width="11" height="11"><polygon points="8,1 15,5 15,11 8,15 1,11 1,5" fill="#0A0A08"/></svg></div>
+    Chamber<em>.</em>
+  </a>
+  <button class="skip-btn" onclick="skipOnboarding()">Skip setup →</button>
+</nav>
+
+<div class="progress-wrap">
+  <div class="progress-fill" id="prog" style="width:16.6%"></div>
+</div>
+
+<div class="step-dots" id="step-dots"></div>
+
+<div class="onb-main">
+  <div class="step-container" id="step-container">
+
+    <!-- STEP 1: Welcome -->
+    <div class="step active" id="step-1">
+      <div class="step-label">Step 1 of 6</div>
+      <div class="step-title">Welcome to Chamber. <em>Let's set you up.</em></div>
+      <div class="step-sub">We'll personalize your workspace and run your first product analysis — all in about 2 minutes.</div>
+      <div class="field">
+        <label>What should we call you?</label>
+        <input id="s1-name" type="text" placeholder="Your first name" autocomplete="given-name"/>
+      </div>
+      <div class="step-nav">
+        <button class="btn-next" onclick="nextStep(1)">Let's go <span>→</span></button>
+      </div>
+    </div>
+
+    <!-- STEP 2: Who are you -->
+    <div class="step" id="step-2">
+      <div class="step-label">Step 2 of 6</div>
+      <div class="step-title">Who are <em>you?</em></div>
+      <div class="step-sub">This helps us customize your reports and feature recommendations.</div>
+      <div class="choice-grid" id="role-grid">
+        <div class="choice" onclick="selectChoice('role','dtc','role-grid')">
+          <div class="choice-icon">🛒</div>
+          <div class="choice-name">DTC Founder</div>
+          <div class="choice-desc">Selling products on Shopify or your own site</div>
+        </div>
+        <div class="choice" onclick="selectChoice('role','amazon','role-grid')">
+          <div class="choice-icon">📦</div>
+          <div class="choice-name">Amazon Seller</div>
+          <div class="choice-desc">FBA or FBM seller on Amazon</div>
+        </div>
+        <div class="choice" onclick="selectChoice('role','agency','role-grid')">
+          <div class="choice-icon">🏢</div>
+          <div class="choice-name">Agency / Freelancer</div>
+          <div class="choice-desc">Working with multiple brands</div>
+        </div>
+        <div class="choice" onclick="selectChoice('role','launching','role-grid')">
+          <div class="choice-icon">🚀</div>
+          <div class="choice-name">Pre-launch</div>
+          <div class="choice-desc">Validating an idea before investing</div>
+        </div>
+      </div>
+      <div class="step-nav">
+        <button class="btn-back" onclick="prevStep(2)">←</button>
+        <button class="btn-next" id="btn-2" onclick="nextStep(2)" disabled>Continue →</button>
+      </div>
+    </div>
+
+    <!-- STEP 3: Goals -->
+    <div class="step" id="step-3">
+      <div class="step-label">Step 3 of 6</div>
+      <div class="step-title">What do you need <em>most?</em></div>
+      <div class="step-sub">Pick everything that applies — we'll surface the right features first.</div>
+      <div class="goal-pills" id="goal-pills">
+        <button class="gpill" onclick="toggleGoal(this,'marketing')">🎯 Marketing angles</button>
+        <button class="gpill" onclick="toggleGoal(this,'competitors')">🔍 Competitor research</button>
+        <button class="gpill" onclick="toggleGoal(this,'reddit')">📊 Reddit intel</button>
+        <button class="gpill" onclick="toggleGoal(this,'influencers')">🤳 Find influencers</button>
+        <button class="gpill" onclick="toggleGoal(this,'keywords')">🔑 SEO keywords</button>
+        <button class="gpill" onclick="toggleGoal(this,'ads')">🎯 Ad copy</button>
+        <button class="gpill" onclick="toggleGoal(this,'launch')">🚀 Launch plan</button>
+        <button class="gpill" onclick="toggleGoal(this,'amazon')">📦 Amazon listing</button>
+        <button class="gpill" onclick="toggleGoal(this,'pricing')">💲 Pricing strategy</button>
+        <button class="gpill" onclick="toggleGoal(this,'content')">✍️ Content creation</button>
+      </div>
+      <div class="step-nav">
+        <button class="btn-back" onclick="prevStep(3)">←</button>
+        <button class="btn-next" onclick="nextStep(3)">Continue →</button>
+      </div>
+    </div>
+
+    <!-- STEP 4: Referral code -->
+    <div class="step" id="step-4">
+      <div class="step-label">Step 4 of 6</div>
+      <div class="step-title">Got a <em>referral code?</em></div>
+      <div class="step-sub">A friend using Chamber can share a code that gives you 50% off your first paid month. Skip if you don't have one.</div>
+      <div class="ref-box">
+        <div class="ref-label">Referral code (optional)</div>
+        <div class="ref-input-row">
+          <input class="ref-input" id="ref-code-input" type="text" placeholder="e.g. K7XM2P9A" maxlength="12"/>
+          <button class="ref-apply" onclick="applyRefCode()">Apply</button>
+        </div>
+        <div class="ref-status" id="ref-status"></div>
+      </div>
+      <div class="step-nav">
+        <button class="btn-back" onclick="prevStep(4)">←</button>
+        <button class="btn-next" onclick="nextStep(4)">Continue →</button>
+      </div>
+    </div>
+
+    <!-- STEP 5: First product analysis -->
+    <div class="step" id="step-5">
+      <div class="step-label">Step 5 of 6</div>
+      <div class="step-title">Your first <em>free analysis.</em></div>
+      <div class="step-sub">Enter any product — yours, a competitor's, or an idea you're validating. We'll run all 6 intelligence modules right now.</div>
+      <div class="analyze-preview">
+        <div class="ap-title">⚡ What you'll get</div>
+        <div class="ap-sub">All 6 modules run simultaneously in about 60 seconds</div>
+        <div class="ap-modules" id="module-chips">
+          <span class="apm active">🎯 Marketing Angles</span>
+          <span class="apm active">🔍 Competitor Gaps</span>
+          <span class="apm active">📊 Reddit Sentiment</span>
+          <span class="apm active">🤳 Influencer Matches</span>
+          <span class="apm active">📈 Growth Score</span>
+          <span class="apm active">💡 Action Plan</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Product name *</label>
+        <input id="s5-product" type="text" placeholder="e.g. Wireless Earbuds Pro, Cold Brew Kit, Dog Harness…" autocomplete="off"/>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Category (optional)</label>
+          <input id="s5-category" type="text" placeholder="e.g. Electronics"/>
+        </div>
+        <div class="field">
+          <label>Target audience (optional)</label>
+          <input id="s5-audience" type="text" placeholder="e.g. Remote workers"/>
+        </div>
+      </div>
+
+      <!-- LOADING STATE (hidden until run) -->
+      <div class="analysis-loading" id="analysis-loading" style="display:none">
+        <div class="al-spinner"></div>
+        <div class="al-status" id="al-status">Checking Reddit communities…</div>
+        <div class="al-sub">Hang tight — fetching live data</div>
+        <div class="al-bar"><div class="al-fill" id="al-fill"></div></div>
+      </div>
+
+      <!-- RESULT PREVIEW (hidden until done) -->
+      <div id="result-preview" style="display:none"></div>
+
+      <div class="step-nav" id="s5-nav">
+        <button class="btn-back" onclick="prevStep(5)">←</button>
+        <button class="btn-next" id="btn-5" onclick="runFirstAnalysis()">⚡ Run My First Analysis</button>
+      </div>
+      <div class="step-nav" id="s5-done-nav" style="display:none">
+        <button class="btn-next" onclick="nextStep(5)">View full report in dashboard →</button>
+      </div>
+    </div>
+
+    <!-- STEP 6: Done -->
+    <div class="step" id="step-6">
+      <div class="step-label">You're all set</div>
+      <div class="step-title">Your workspace <em>is ready.</em></div>
+      <div class="step-sub">Your personalized Chamber dashboard is ready with your first analysis saved. Here's what to do next.</div>
+
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:24px" id="next-steps">
+        <!-- Injected based on goals -->
+      </div>
+
+      <div class="step-nav" style="flex-direction:column;gap:8px">
+        <button class="btn-next" onclick="finishOnboarding()">
+          <span>⚡</span> Open My Dashboard
+        </button>
+        <button class="btn-back" style="text-align:center" onclick="window.location.href='profile.html'">View profile & referral code</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL     = 'YOUR_SUPABASE_URL';
+const SUPABASE_ANON_KEY= 'YOUR_SUPABASE_ANON_KEY';
+const API_BASE = window.location.hostname==='localhost' ? 'http://localhost:3001' : 'https://your-api.com';
+
+let _sb, _sess, _profile;
+let _state = { name:'', role:'', goals:[], refCode:'', refApplied:false, analysis:null };
+let _currentStep = 1;
+const TOTAL_STEPS = 6;
+
+async function init() {
+  _sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const { data:{session} } = await _sb.auth.getSession();
+  if (!session) { window.location.href='login.html'; return; }
+  _sess = session;
+
+  // Pre-fill name from session
+  const emailName = session.user.email?.split('@')[0] || '';
+  const metaName  = session.user.user_metadata?.full_name?.split(' ')[0] || '';
+  if (document.getElementById('s1-name'))
+    document.getElementById('s1-name').value = metaName || emailName;
+
+  // If already onboarded, skip to dashboard
+  try {
+    const me = await apiFetch('/api/auth/me');
+    _profile = me.profile;
+    if (_profile?.onboarded) { window.location.href='app.html'; return; }
+  } catch {}
+
+  buildDots();
+}
+
+function buildDots() {
+  const el = document.getElementById('step-dots');
+  el.innerHTML = Array.from({length:TOTAL_STEPS},(_,i)=>`<div class="sdot ${i===0?'act':''}" id="dot-${i+1}"></div>`).join('');
+}
+
+function updateDots(step) {
+  for (let i=1;i<=TOTAL_STEPS;i++) {
+    const d=document.getElementById(`dot-${i}`);
+    if (!d) continue;
+    d.className='sdot'+(i<step?' done':i===step?' act':'');
+  }
+}
+
+function updateProgress(step) {
+  document.getElementById('prog').style.width=(step/TOTAL_STEPS*100)+'%';
+}
+
+// ── NAVIGATION ────────────────────────────────────────────────
+async function nextStep(from) {
+  if (from===1) {
+    _state.name = document.getElementById('s1-name').value.trim() || _sess.user.email.split('@')[0];
+  }
+  if (from===5 && !_state.analysis) {
+    // Must run analysis first
+    document.getElementById('s5-product').focus();
+    document.getElementById('s5-product').style.borderColor='rgba(200,240,74,.5)';
+    return;
+  }
+
+  const leaving = document.getElementById(`step-${from}`);
+  leaving.classList.add('leaving');
+  setTimeout(()=>{ leaving.classList.remove('leaving','active'); leaving.style.display=''; }, 200);
+
+  const next = from+1;
+  _currentStep = next;
+  const arriving = document.getElementById(`step-${next}`);
+  arriving.classList.add('active');
+  updateDots(next);
+  updateProgress(next);
+
+  if (next===6) buildNextSteps();
+}
+
+function prevStep(from) {
+  const leaving = document.getElementById(`step-${from}`);
+  leaving.classList.remove('active');
+  const prev = from-1;
+  _currentStep = prev;
+  const arriving = document.getElementById(`step-${prev}`);
+  arriving.classList.add('active');
+  updateDots(prev);
+  updateProgress(prev);
+}
+
+// ── STEP 2: Role ──────────────────────────────────────────────
+function selectChoice(type, val, gridId) {
+  _state[type] = val;
+  document.querySelectorAll(`#${gridId} .choice`).forEach(el=>el.classList.remove('selected'));
+  event.currentTarget.classList.add('selected');
+  document.getElementById(`btn-${_currentStep}`)?.removeAttribute('disabled');
+}
+
+// ── STEP 3: Goals ─────────────────────────────────────────────
+function toggleGoal(el, goal) {
+  el.classList.toggle('sel');
+  if (el.classList.contains('sel')) _state.goals.push(goal);
+  else _state.goals = _state.goals.filter(g=>g!==goal);
+}
+
+// ── STEP 4: Referral ──────────────────────────────────────────
+async function applyRefCode() {
+  const code = document.getElementById('ref-code-input').value.trim().toUpperCase();
+  if (!code) return;
+  const status = document.getElementById('ref-status');
+  status.textContent='Checking…';
+  status.className='ref-status';
+  try {
+    const data = await apiFetch('/api/referral/apply', { method:'POST', body:JSON.stringify({ referral_code:code }) });
+    status.textContent = '✓ Code applied — 50% off your first paid month!';
+    status.className = 'ref-status ref-ok';
+    _state.refCode = code;
+    _state.refApplied = true;
+  } catch(e) {
+    status.textContent = '⚠ ' + (e.message||'Invalid code');
+    status.className = 'ref-status ref-err';
+  }
+}
+
+// ── STEP 5: Analysis ─────────────────────────────────────────
+async function runFirstAnalysis() {
+  const product = document.getElementById('s5-product').value.trim();
+  if (!product) {
+    document.getElementById('s5-product').style.borderColor='rgba(255,92,58,.4)';
+    document.getElementById('s5-product').focus();
+    return;
+  }
+
+  // Show loading
+  document.getElementById('s5-nav').style.display='none';
+  document.getElementById('analysis-loading').style.display='block';
+  animateModules();
+  animateAnalysisBar();
+
+  try {
+    const data = await apiFetch('/api/analyze', {
+      method:'POST',
+      body:JSON.stringify({
+        product,
+        category: document.getElementById('s5-category').value||'',
+        audience: document.getElementById('s5-audience').value||'',
+      })
+    });
+    _state.analysis = data.report;
+    showResultPreview(data.report);
+  } catch(e) {
+    document.getElementById('analysis-loading').style.display='none';
+    document.getElementById('s5-nav').style.display='flex';
+    document.getElementById('al-status').textContent='';
+    // Show error inline
+    const err=document.createElement('div');
+    err.style.cssText='font-size:12px;color:var(--red);font-family:var(--fm);padding:8px 0';
+    err.textContent='⚠ '+e.message;
+    document.getElementById('s5-nav').before(err);
+  }
+}
+
+function showResultPreview(r) {
+  document.getElementById('analysis-loading').style.display='none';
+  const sc=r.growth_score||0;
+  const c=sc>=80?'var(--accent)':sc>=60?'var(--amber)':'var(--red)';
+  const preview=document.getElementById('result-preview');
+  preview.style.display='block';
+  preview.innerHTML=`<div class="result-preview">
+    <div class="rp-head">
+      <div class="rp-score" style="color:${c}">${sc}</div>
+      <div>
+        <div class="rp-name">${r.product_name||r.product||product}</div>
+        <div class="rp-cat">${r.category||''} · Growth score</div>
+      </div>
+    </div>
+    <div class="rp-body">
+      <div class="rp-mini">
+        <div class="rp-mini-label">Top angles</div>
+        <div class="rp-mini-val"><ul>${(r.marketing_angles||[]).slice(0,2).map(a=>`<li>${a.title}</li>`).join('')}</ul></div>
+      </div>
+      <div class="rp-mini">
+        <div class="rp-mini-label">Action plan</div>
+        <div class="rp-mini-val"><ul>${(r.actionable_tips||[]).slice(0,2).map(t=>`<li>${t.slice(0,50)}…</li>`).join('')}</ul></div>
+      </div>
+    </div>
+  </div>`;
+  document.getElementById('s5-done-nav').style.display='flex';
+}
+
+function animateModules() {
+  const chips=document.querySelectorAll('.apm');
+  chips.forEach(c=>c.classList.remove('active'));
+  const statuses=['Searching Reddit…','Scanning competitors…','Analyzing sentiment…','Finding influencers…','Calculating growth score…','Building action plan…'];
+  let i=0;
+  const iv=setInterval(()=>{
+    if(i<chips.length){chips[i].classList.add('active');document.getElementById('al-status').textContent=statuses[i]||'Processing…';}
+    i++;
+    if(i>chips.length)clearInterval(iv);
+  },6000/chips.length);
+}
+
+function animateAnalysisBar() {
+  const fill=document.getElementById('al-fill');
+  let p=0;
+  const iv=setInterval(()=>{
+    p=Math.min(p+(Math.random()*3),92);
+    fill.style.width=p+'%';
+    if(p>=92)clearInterval(iv);
+  },600);
+}
+
+// ── STEP 6: Next steps ────────────────────────────────────────
+function buildNextSteps() {
+  const goalMap = {
+    marketing: {icon:'🎯',text:'Run the Ad Copy Generator for your product'},
+    competitors:{icon:'🔍',text:'Use Competitor Ad Intel to steal their angles'},
+    reddit:    {icon:'📊',text:'Check Reddit Communities for your niche'},
+    influencers:{icon:'🤳',text:'Generate Influencer Outreach Templates'},
+    keywords:  {icon:'🔑',text:'Run SEO Keywords for your category'},
+    ads:       {icon:'🎯',text:'Generate platform-specific Ad Copy'},
+    launch:    {icon:'🚀',text:'Build your Go-To-Market Strategy'},
+    amazon:    {icon:'📦',text:'Optimize your Amazon Listing'},
+    pricing:   {icon:'💲',text:'Calculate exact unit economics in Margin Calc'},
+    content:   {icon:'✍️',text:'Build a 30-day TikTok Content Calendar'},
+  };
+
+  const steps = [
+    ..._state.goals.slice(0,3).map(g=>goalMap[g]).filter(Boolean),
+    {icon:'🔗',text:'Share your referral code to unlock free Growth plan'},
+    {icon:'📋',text:'View your full analysis in the dashboard'},
+  ].slice(0,4);
+
+  document.getElementById('next-steps').innerHTML = steps.map(s=>`
+    <div style="display:flex;align-items:center;gap:10px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px 14px;font-size:13px">
+      <span style="font-size:16px">${s.icon}</span>
+      <span style="color:var(--text2)">${s.text}</span>
+    </div>`).join('');
+}
+
+// ── FINISH ────────────────────────────────────────────────────
+async function finishOnboarding() {
+  // Mark onboarding complete
+  try {
+    await apiFetch('/api/user/profile', {
+      method:'PATCH',
+      body:JSON.stringify({
+        display_name: _state.name,
+        onboarded: true,
+        role: _state.role,
+        goals: _state.goals.join(','),
+      })
+    });
+  } catch {}
+  window.location.href = 'app.html';
+}
+
+function skipOnboarding() {
+  if (confirm('Skip setup? You can always update your preferences in Settings.')) {
+    finishOnboarding();
+  }
+}
+
+// ── HELPERS ───────────────────────────────────────────────────
+async function apiFetch(path, opts={}) {
+  const headers={'Content-Type':'application/json'};
+  if (_sess?.access_token) headers['Authorization']=`Bearer ${_sess.access_token}`;
+  const res=await fetch(API_BASE+path,{headers,...opts});
+  const data=await res.json();
+  if(!res.ok) throw new Error(data.error||'Request failed');
+  return data;
+}
+
+// NOTE: also add onboarded + role + goals columns to profiles in Supabase:
+// ALTER TABLE profiles ADD COLUMN IF NOT EXISTS onboarded BOOLEAN DEFAULT FALSE;
+// ALTER TABLE profiles ADD COLUMN IF NOT EXISTS role TEXT;
+// ALTER TABLE profiles ADD COLUMN IF NOT EXISTS goals TEXT;
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

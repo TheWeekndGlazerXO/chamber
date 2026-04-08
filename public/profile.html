@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Chamber · Profile</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@1&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0A0A08;--bg2:#111110;--bg3:#1A1A18;--bg4:#222220;--border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.13);--text:#F0EEE6;--text2:#8A8880;--text3:#555450;--accent:#C8F04A;--accent2:#A8D030;--adim:rgba(200,240,74,.1);--red:#FF5C3A;--teal:#3AFFD4;--amber:#FFB830;--fd:'Syne',sans-serif;--fm:'DM Mono',monospace;--fs:'Instrument Serif',serif;--r:12px}
+body{background:var(--bg);color:var(--text);font-family:var(--fd);-webkit-font-smoothing:antialiased;min-height:100vh}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:2px}
+
+/* LOADER */
+#loader{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:999;flex-direction:column;gap:14px}
+.loader-mark{width:32px;height:32px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center;animation:pulse 1.5s ease-in-out infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(200,240,74,.4)}50%{box-shadow:0 0 0 12px rgba(200,240,74,0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* NAV */
+.nav{position:sticky;top:0;z-index:50;background:rgba(10,10,8,.92);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:0 40px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.logo{font-size:16px;font-weight:800;display:flex;align-items:center;gap:8px;text-decoration:none;color:var(--text)}
+.logo-mark{width:26px;height:26px;background:var(--accent);border-radius:5px;display:flex;align-items:center;justify-content:center}
+.logo em{color:var(--accent);font-style:normal}
+.nav-r{display:flex;align-items:center;gap:8px}
+.nav-btn{font-size:12px;font-family:var(--fd);font-weight:600;padding:7px 14px;border-radius:7px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;transition:all .15s;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.nav-btn:hover{color:var(--text);background:var(--bg3)}
+.nav-btn.accent{background:var(--accent);color:#0A0A08;border-color:var(--accent)}
+.nav-btn.accent:hover{background:var(--accent2)}
+
+/* LAYOUT */
+.page{max-width:960px;margin:0 auto;padding:40px 24px 80px}
+.page-grid{display:grid;grid-template-columns:1fr 380px;gap:24px;align-items:start}
+
+/* CARDS */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:16px}
+.card-head{padding:16px 20px;border-bottom:1px solid var(--border);font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:space-between}
+.card-head-icon{font-size:15px;margin-right:7px}
+.card-body{padding:20px}
+
+/* PROFILE HERO */
+.profile-hero{background:linear-gradient(135deg,rgba(200,240,74,.06),rgba(58,255,212,.03));border:1px solid rgba(200,240,74,.15);border-radius:var(--r);padding:28px;display:flex;align-items:center;gap:20px;margin-bottom:16px}
+.avatar-circle{width:72px;height:72px;border-radius:50%;background:var(--adim);border:2px solid rgba(200,240,74,.3);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;color:var(--accent);flex-shrink:0;letter-spacing:-1px;position:relative}
+.avatar-edit{position:absolute;bottom:0;right:0;width:22px;height:22px;border-radius:50%;background:var(--accent);border:2px solid var(--bg2);display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer;color:#0A0A08;font-weight:900}
+.profile-name{font-size:22px;font-weight:800;letter-spacing:-.5px;margin-bottom:4px}
+.profile-email{font-size:13px;font-family:var(--fm);color:var(--text3);margin-bottom:10px}
+.profile-badges{display:flex;gap:7px;flex-wrap:wrap}
+.pbadge{font-size:10px;font-family:var(--fm);font-weight:700;padding:3px 10px;border-radius:100px}
+.pb-free{background:rgba(85,84,80,.3);color:var(--text3)}
+.pb-starter{background:rgba(138,136,128,.2);color:var(--text2)}
+.pb-growth{background:var(--adim);color:var(--accent)}
+.pb-scale{background:rgba(58,255,212,.12);color:var(--teal)}
+.pb-joined{background:rgba(255,255,255,.05);color:var(--text3)}
+
+/* FORM */
+label{display:block;font-size:10px;font-family:var(--fm);color:var(--text3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:5px}
+input,select{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:10px 12px;font-size:13px;font-family:var(--fd);color:var(--text);outline:none;transition:border-color .2s;margin-bottom:12px}
+input:focus,select:focus{border-color:var(--accent)}
+input:read-only{opacity:.5;cursor:default}
+.form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+.btn{font-family:var(--fd);font-size:13px;font-weight:600;padding:9px 18px;border-radius:7px;border:none;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:7px}
+.btn-accent{background:var(--accent);color:#0A0A08}
+.btn-accent:hover{background:var(--accent2);transform:translateY(-1px)}
+.btn-ghost{background:transparent;border:1px solid var(--border2);color:var(--text2)}
+.btn-ghost:hover{color:var(--text);background:var(--bg3)}
+.btn-sm{font-size:11px;padding:6px 12px}
+.btn-full{width:100%;justify-content:center}
+
+/* REFERRAL CODE */
+.ref-box{background:linear-gradient(135deg,rgba(200,240,74,.08),rgba(200,240,74,.03));border:1px solid rgba(200,240,74,.25);border-radius:var(--r);padding:20px}
+.ref-code-row{display:flex;align-items:center;gap:8px;margin:12px 0}
+.ref-code{font-size:22px;font-weight:800;letter-spacing:3px;font-family:var(--fm);color:var(--accent);flex:1;background:var(--bg4);border:1px solid rgba(200,240,74,.2);border-radius:8px;padding:12px 16px;text-align:center}
+.ref-copy-btn{padding:12px 16px;background:var(--accent);border:none;border-radius:8px;cursor:pointer;font-size:16px;transition:all .2s;flex-shrink:0}
+.ref-copy-btn:hover{background:var(--accent2);transform:scale(1.05)}
+.ref-stats-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:14px}
+.ref-stat{background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.06);border-radius:8px;padding:12px;text-align:center}
+.ref-stat-num{font-size:24px;font-weight:800;letter-spacing:-1px;color:var(--accent)}
+.ref-stat-lbl{font-size:10px;font-family:var(--fm);color:var(--text3);margin-top:3px}
+
+/* PROGRESS */
+.progress-wrap{margin:14px 0 8px}
+.progress-label{display:flex;justify-content:space-between;font-size:11px;font-family:var(--fm);color:var(--text3);margin-bottom:5px}
+.progress-track{height:6px;background:var(--bg4);border-radius:3px;overflow:hidden}
+.progress-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--teal),var(--accent));transition:width .8s ease}
+.reward-hint{font-size:12px;font-family:var(--fm);color:var(--text2);line-height:1.6;margin-top:10px;padding:10px 12px;background:rgba(200,240,74,.04);border:1px solid rgba(200,240,74,.1);border-radius:7px}
+
+/* TABLE */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{padding:8px 12px;text-align:left;font-size:9px;font-family:var(--fm);color:var(--text3);letter-spacing:.07em;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:400}
+td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.015)}
+
+/* KV ROWS */
+.kv{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:13px}
+.kv:last-child{border-bottom:none}
+.kv-key{color:var(--text3);font-family:var(--fm);font-size:11px}
+.kv-val{font-weight:600;color:var(--text)}
+.kv-val.accent{color:var(--accent)}
+
+/* PLAN CARD */
+.plan-card{background:var(--bg3);border:1px solid var(--border);border-radius:9px;padding:16px;margin-bottom:10px;cursor:pointer;transition:border-color .2s}
+.plan-card:hover{border-color:var(--border2)}
+.plan-card.current{border-color:rgba(200,240,74,.3);background:linear-gradient(135deg,rgba(200,240,74,.06),var(--bg3))}
+.plan-name{font-size:14px;font-weight:700;margin-bottom:3px}
+.plan-price{font-size:20px;font-weight:800;letter-spacing:-1px;color:var(--accent)}
+.plan-price span{font-size:11px;font-weight:400;color:var(--text3)}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:11px 16px;font-size:13px;z-index:999;transform:translateY(60px);opacity:0;transition:all .3s;display:flex;align-items:center;gap:7px}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.ok{border-color:rgba(200,240,74,.3);color:var(--accent)}
+.toast.err{border-color:rgba(255,92,58,.3);color:var(--red)}
+
+/* SHARE ROW */
+.share-row{display:flex;gap:7px;margin-top:12px;flex-wrap:wrap}
+.share-btn{font-size:11px;font-family:var(--fm);font-weight:600;padding:7px 12px;border-radius:7px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:5px}
+.share-btn:hover{color:var(--text);background:var(--bg3)}
+
+/* EMPTY STATE */
+.empty{text-align:center;padding:32px;color:var(--text3);font-size:12px;font-family:var(--fm)}
+.empty-icon{font-size:28px;opacity:.4;margin-bottom:8px}
+</style>
+</head>
+<body>
+
+<div id="loader">
+  <div class="loader-mark">
+    <svg viewBox="0 0 16 16" fill="none" width="12" height="12"><polygon points="8,1 15,5 15,11 8,15 1,11 1,5" fill="#0A0A08"/></svg>
+  </div>
+  <div style="font-size:11px;font-family:var(--fm);color:var(--text3)">Loading profile…</div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<div id="main" style="display:none">
+
+  <nav class="nav">
+    <a href="app.html" class="logo">
+      <div class="logo-mark"><svg viewBox="0 0 16 16" fill="none" width="11" height="11"><polygon points="8,1 15,5 15,11 8,15 1,11 1,5" fill="#0A0A08"/></svg></div>
+      Chamber<em>.</em>
+    </a>
+    <div class="nav-r">
+      <a href="app.html" class="nav-btn">← Dashboard</a>
+      <button class="nav-btn accent" onclick="signOut()">Sign out</button>
+    </div>
+  </nav>
+
+  <div class="page">
+    <div style="margin-bottom:24px">
+      <h1 style="font-size:26px;font-weight:800;letter-spacing:-.5px;margin-bottom:4px">My Profile</h1>
+      <p style="color:var(--text2);font-size:13px">Manage your account and track your referrals</p>
+    </div>
+
+    <div class="page-grid">
+
+      <!-- LEFT COLUMN -->
+      <div>
+
+        <!-- PROFILE HERO -->
+        <div class="profile-hero">
+          <div class="avatar-circle" id="avatar">?</div>
+          <div style="flex:1">
+            <div class="profile-name" id="display-name">Loading…</div>
+            <div class="profile-email" id="profile-email">—</div>
+            <div class="profile-badges">
+              <span class="pbadge pb-free" id="plan-badge">FREE</span>
+              <span class="pbadge pb-joined" id="joined-badge">—</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- EDIT PROFILE -->
+        <div class="card">
+          <div class="card-head"><span><span class="card-head-icon">✏️</span>Edit Profile</span></div>
+          <div class="card-body">
+            <div class="form-row-2">
+              <div>
+                <label>Display Name</label>
+                <input id="edit-name" type="text" placeholder="Your name"/>
+              </div>
+              <div>
+                <label>Email (read-only)</label>
+                <input id="edit-email" type="email" readonly/>
+              </div>
+            </div>
+            <button class="btn btn-accent" onclick="saveProfile()">Save changes</button>
+          </div>
+        </div>
+
+        <!-- REFERRAL SYSTEM -->
+        <div class="card">
+          <div class="card-head"><span><span class="card-head-icon">🔗</span>Referral Program</span><span style="font-size:10px;font-family:var(--fm);color:var(--teal)">Earn FREE Growth plan</span></div>
+          <div class="card-body">
+            <p style="font-size:13px;color:var(--text2);line-height:1.65;margin-bottom:14px">Share your referral code. When 3 friends sign up and purchase any plan, you unlock <strong style="color:var(--accent)">2 months of Growth free</strong> ($198 value). Your friends get <strong style="color:var(--accent)">50% off their first month</strong>.</p>
+
+            <div class="ref-box">
+              <div style="font-size:10px;font-family:var(--fm);color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px">Your referral code</div>
+              <div class="ref-code-row">
+                <div class="ref-code" id="ref-code-display">— — — —</div>
+                <button class="ref-copy-btn" onclick="copyRefCode()" title="Copy code">📋</button>
+              </div>
+
+              <!-- Progress to reward -->
+              <div class="progress-wrap">
+                <div class="progress-label">
+                  <span>Progress to reward</span>
+                  <span id="ref-progress-label">0 / 3 referrals</span>
+                </div>
+                <div class="progress-track"><div class="progress-fill" id="ref-progress-bar" style="width:0%"></div></div>
+              </div>
+
+              <div class="reward-hint" id="reward-hint">
+                🎁 Get 3 friends to purchase any plan using your code → unlock 2 months of Growth ($198 free)
+              </div>
+
+              <div class="ref-stats-row">
+                <div class="ref-stat"><div class="ref-stat-num" id="ref-used">0</div><div class="ref-stat-lbl">Code uses</div></div>
+                <div class="ref-stat"><div class="ref-stat-num" id="ref-converted">0</div><div class="ref-stat-lbl">Converted</div></div>
+                <div class="ref-stat"><div class="ref-stat-num" id="ref-rewards">0</div><div class="ref-stat-lbl">Rewards earned</div></div>
+              </div>
+            </div>
+
+            <!-- Share buttons -->
+            <div class="share-row" id="share-row">
+              <button class="share-btn" onclick="shareTwitter()">𝕏 Share on X</button>
+              <button class="share-btn" onclick="shareWhatsApp()">💬 WhatsApp</button>
+              <button class="share-btn" onclick="copyRefLink()">🔗 Copy link</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- REFERRAL HISTORY -->
+        <div class="card">
+          <div class="card-head"><span><span class="card-head-icon">📋</span>Referral History</span></div>
+          <div class="card-body" style="padding:0">
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Email</th><th>Plan</th><th>Status</th><th>Date</th></tr></thead>
+                <tbody id="ref-history-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- END LEFT -->
+
+      <!-- RIGHT COLUMN -->
+      <div>
+
+        <!-- PLAN & USAGE -->
+        <div class="card">
+          <div class="card-head"><span><span class="card-head-icon">⚡</span>Plan & Usage</span></div>
+          <div class="card-body">
+            <div class="kv"><span class="kv-key">Current plan</span><span class="kv-val accent" id="kv-plan">FREE</span></div>
+            <div class="kv"><span class="kv-key">Reports this month</span><span class="kv-val" id="kv-reports">—</span></div>
+            <div class="kv"><span class="kv-key">Monthly limit</span><span class="kv-val" id="kv-limit">—</span></div>
+            <div class="kv"><span class="kv-key">Account ID</span><span class="kv-val" style="font-family:var(--fm);font-size:10px;color:var(--text3)" id="kv-id">—</span></div>
+            <div class="kv" style="border:none"><span class="kv-key">Member since</span><span class="kv-val" style="color:var(--text2)" id="kv-joined">—</span></div>
+
+            <div style="margin-top:8px">
+              <div style="font-size:10px;font-family:var(--fm);color:var(--text3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:5px">Reports used</div>
+              <div class="progress-track" style="height:5px"><div class="progress-fill" id="usage-bar" style="width:0%"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- UPGRADE PLANS -->
+        <div class="card" id="upgrade-section">
+          <div class="card-head"><span><span class="card-head-icon">🚀</span>Upgrade Plan</span></div>
+          <div class="card-body">
+            <div id="plan-cards"></div>
+            <p style="font-size:11px;font-family:var(--fm);color:var(--text3);margin-top:8px;line-height:1.6">Have a referral code? You'll be able to enter it at checkout for <strong style="color:var(--accent)">50% off</strong> your first month.</p>
+          </div>
+        </div>
+
+        <!-- RECENT REPORTS -->
+        <div class="card">
+          <div class="card-head"><span><span class="card-head-icon">📊</span>Recent Analyses</span><a href="app.html" style="font-size:11px;font-family:var(--fm);color:var(--teal);text-decoration:none">View all →</a></div>
+          <div id="recent-reports" style="padding:4px 0"></div>
+        </div>
+
+        <!-- DANGER ZONE -->
+        <div class="card" style="border-color:rgba(255,92,58,.15)">
+          <div class="card-head" style="color:var(--red)"><span><span class="card-head-icon">⚠️</span>Account</span></div>
+          <div class="card-body">
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <button class="btn btn-ghost btn-full btn-sm" onclick="copyApiToken()">🔑 Copy API token</button>
+              <button class="btn btn-ghost btn-full btn-sm" onclick="signOut()">← Sign out</button>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- END RIGHT -->
+
+    </div><!-- END GRID -->
+  </div><!-- END PAGE -->
+</div>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────────────
+let SUPABASE_URL = '', SUPABASE_ANON_KEY = '', _sb;
+const API_BASE = window.location.hostname === 'localhost' 
+  ? 'http://localhost:3001' 
+  : 'https://your-api.com';
+// Stripe Payment Links — paste your links here
+const STRIPE_LINKS = {
+  starter: 'https://buy.stripe.com/YOUR_STARTER_LINK',
+  growth:  'https://buy.stripe.com/YOUR_GROWTH_LINK',
+  scale:   'https://buy.stripe.com/YOUR_SCALE_LINK',
+};
+
+const PLAN_LIMITS = { free:3, starter:5, growth:25, scale:999999 };
+
+
+let _session, _profile, _refCode;
+
+// ── INIT ────────────────────────────────────────────────────
+async function init() {
+  const cfg = await fetch(API_BASE + '/api/config').then(r => r.json());
+  SUPABASE_URL = cfg.supabaseUrl;
+  SUPABASE_ANON_KEY = cfg.supabaseAnonKey;
+  _sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const { data: { session } } = await _sb.auth.getSession();
+  if (!session) { window.location.href = 'login.html'; return; }
+  _session = session;
+  // ... rest of init unchanged
+
+  try {
+    const res = await apiFetch('/api/auth/me');
+    _profile = res.profile || { plan:'free', reports_this_month:0 };
+  } catch { _profile = { plan:'free', reports_this_month:0 }; }
+
+  renderProfile();
+  await loadReferralData();
+  await loadRecentReports();
+
+  document.getElementById('loader').style.display = 'none';
+  document.getElementById('main').style.display = 'block';
+}
+
+// ── RENDER PROFILE ─────────────────────────────────────────
+function renderProfile() {
+  const u     = _session.user;
+  const email = u.email || '';
+  const name  = _profile?.display_name || u.user_metadata?.full_name || email.split('@')[0];
+  const plan  = _profile?.plan || 'free';
+  const used  = _profile?.reports_this_month || 0;
+  const limit = PLAN_LIMITS[plan];
+  const joined= new Date(u.created_at).toLocaleDateString('en-US',{month:'short',year:'numeric'});
+
+  document.getElementById('avatar').textContent = name.slice(0,2).toUpperCase();
+  document.getElementById('display-name').textContent = name;
+  document.getElementById('profile-email').textContent = email;
+  document.getElementById('edit-name').value = name;
+  document.getElementById('edit-email').value = email;
+
+  const pb = document.getElementById('plan-badge');
+  pb.textContent = plan.toUpperCase();
+  pb.className = `pbadge pb-${plan}`;
+  document.getElementById('joined-badge').textContent = `Joined ${joined}`;
+
+  document.getElementById('kv-plan').textContent    = plan.toUpperCase();
+  document.getElementById('kv-reports').textContent = `${used} used`;
+  document.getElementById('kv-limit').textContent   = limit === 999999 ? 'Unlimited' : `${limit}/month`;
+  document.getElementById('kv-id').textContent      = u.id.slice(0,16)+'…';
+  document.getElementById('kv-joined').textContent  = new Date(u.created_at).toLocaleDateString();
+  document.getElementById('usage-bar').style.width  = Math.min((used/limit)*100,100)+'%';
+
+  // Plans
+  const plans = [
+    {key:'starter',name:'Starter',price:'$29.99',reports:5},
+    {key:'growth', name:'Growth', price:'$59.99', reports:25},
+    {key:'scale',  name:'Scale',  price:'$129.99',reports:'∞'},
+  ];
+  document.getElementById('plan-cards').innerHTML = plans.map(p=>`
+    <div class="plan-card ${p.key===plan?'current':''}" onclick="${p.key===plan?'':  `startUpgrade('${p.key}')`}">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div><div class="plan-name">${p.name} ${p.key===plan?'<span style="font-size:10px;color:var(--accent)">✓ current</span>':''}</div>
+        <div style="font-size:11px;font-family:var(--fm);color:var(--text3)">${p.reports} reports/mo</div></div>
+        <div class="plan-price">${p.price}<span>/mo</span></div>
+      </div>
+      ${p.key!==plan?`<div style="margin-top:10px"><div class="btn btn-accent btn-sm btn-full" style="text-align:center;justify-content:center;cursor:pointer">Upgrade → ${p.name}</div></div>`:''}
+    </div>`).join('');
+
+  if (plan === 'scale') document.getElementById('upgrade-section').style.display='none';
+}
+
+// ── REFERRAL DATA ───────────────────────────────────────────
+async function loadReferralData() {
+  try {
+    const data = await apiFetch('/api/referral/my-code');
+    _refCode = data.code;
+    document.getElementById('ref-code-display').textContent = data.code;
+
+    const stats = data.stats || { used:0, converted:0, rewards:0 };
+    document.getElementById('ref-used').textContent      = stats.used;
+    document.getElementById('ref-converted').textContent = stats.converted;
+    document.getElementById('ref-rewards').textContent   = stats.rewards;
+
+    const pct = Math.min((stats.converted / 3) * 100, 100);
+    document.getElementById('ref-progress-bar').style.width = pct + '%';
+    document.getElementById('ref-progress-label').textContent = `${stats.converted} / 3 referrals`;
+
+    if (stats.converted >= 3) {
+      document.getElementById('reward-hint').innerHTML = '🎉 <strong style="color:var(--accent)">Reward unlocked!</strong> Your free Growth months have been applied.';
+      document.getElementById('reward-hint').style.borderColor = 'rgba(200,240,74,.3)';
+    }
+
+    // History table
+    const tbody = document.getElementById('ref-history-body');
+    if (data.history?.length) {
+      tbody.innerHTML = data.history.map(r => {
+        const statusColor = r.status==='converted'?'var(--accent)':r.status==='pending'?'var(--amber)':'var(--text3)';
+        return `<tr>
+          <td style="font-size:12px">${r.referred_email||'—'}</td>
+          <td><span style="font-family:var(--fm);font-size:10px;color:var(--accent)">${r.plan_purchased||'—'}</span></td>
+          <td><span style="font-family:var(--fm);font-size:10px;color:${statusColor}">${r.status||'pending'}</span></td>
+          <td style="font-family:var(--fm);font-size:10px;color:var(--text3)">${r.created_at?new Date(r.created_at).toLocaleDateString():'—'}</td>
+        </tr>`;
+      }).join('');
+    } else {
+      tbody.innerHTML = `<tr><td colspan="4"><div class="empty"><div class="empty-icon">🔗</div>No referrals yet — share your code!</div></td></tr>`;
+    }
+  } catch (e) {
+    console.warn('Referral load error:', e.message);
+    document.getElementById('ref-code-display').textContent = 'Error loading';
+  }
+}
+
+async function loadRecentReports() {
+  try {
+    const data = await apiFetch('/api/user/reports');
+    const reports = (data.reports || []).slice(0, 5);
+    const container = document.getElementById('recent-reports');
+    if (!reports.length) {
+      container.innerHTML = `<div class="empty" style="padding:20px"><div class="empty-icon">📊</div>No analyses yet</div>`;
+      return;
+    }
+    container.innerHTML = reports.map(r => {
+      const scoreColor = (r.growth_score||0)>=80?'var(--accent)':(r.growth_score||0)>=60?'var(--amber)':'var(--red)';
+      return `<div style="display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.04)">
+        <div style="font-size:18px;font-weight:800;color:${scoreColor};min-width:32px;font-family:var(--fm)">${r.growth_score||'—'}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.product_name||'Unnamed'}</div>
+          <div style="font-size:10px;font-family:var(--fm);color:var(--text3)">${new Date(r.created_at).toLocaleDateString()}</div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch { document.getElementById('recent-reports').innerHTML = `<div class="empty">Could not load reports</div>`; }
+}
+
+// ── ACTIONS ─────────────────────────────────────────────────
+async function saveProfile() {
+  const name = document.getElementById('edit-name').value.trim();
+  if (!name) { toast('Enter a display name', 'err'); return; }
+  try {
+    await apiFetch('/api/user/profile', { method:'PATCH', body: JSON.stringify({ display_name: name }) });
+    document.getElementById('display-name').textContent = name;
+    document.getElementById('avatar').textContent = name.slice(0,2).toUpperCase();
+    toast('Profile saved!', 'ok');
+  } catch(e) { toast('Save failed: '+e.message, 'err'); }
+}
+
+function copyRefCode() {
+  if (!_refCode) return;
+  navigator.clipboard.writeText(_refCode).then(() => toast('Code copied! ✓', 'ok'));
+}
+
+function copyRefLink() {
+  const link = `${window.location.origin}/login.html?ref=${_refCode}`;
+  navigator.clipboard.writeText(link).then(() => toast('Link copied!', 'ok'));
+}
+
+function shareTwitter() {
+  const text = `I'm using Chamber for AI product intelligence. Use my code ${_refCode} for 50% off your first month! 🎯`;
+  window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`);
+}
+
+function shareWhatsApp() {
+  const text = `Hey! Try Chamber — AI product research tool. Use my code *${_refCode}* for 50% off your first month: ${window.location.origin}/login.html?ref=${_refCode}`;
+  window.open(`https://wa.me/?text=${encodeURIComponent(text)}`);
+}
+
+function startUpgrade(plan) {
+  // Redirect to Stripe payment link
+  // Append prefilled promo code if they have a referral discount coming
+  const link = STRIPE_LINKS[plan];
+  if (!link || link.includes('YOUR_')) {
+    toast('Payment links not configured — add to STRIPE_LINKS in profile.html', 'err');
+    return;
+  }
+  // Add user email prefill
+  const email = _session?.user?.email || '';
+  const url = `${link}?prefilled_email=${encodeURIComponent(email)}&prefilled_promo_code=FRIEND50`;
+  
+  window.open(url, '_blank');
+  toast('Redirecting to Stripe checkout…', 'ok');
+}
+
+function copyApiToken() {
+  navigator.clipboard.writeText(_session?.access_token || '').then(() => toast('API token copied', 'ok'));
+}
+
+async function signOut() {
+  await _sb.auth.signOut();
+  window.location.href = 'login.html';
+}
+
+// ── HELPERS ─────────────────────────────────────────────────
+async function apiFetch(path, options={}) {
+  const headers = { 'Content-Type':'application/json' };
+  if (_session?.access_token) headers['Authorization'] = `Bearer ${_session.access_token}`;
+  const res = await fetch(API_BASE + path, { headers, ...options });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Request failed');
+  return data;
+}
+
+function toast(msg, type='ok') {
+  const el = document.getElementById('toast');
+  el.textContent = (type==='ok'?'✓ ':'⚠ ') + msg;
+  el.className = `toast ${type} show`;
+  setTimeout(()=>el.classList.remove('show'), 3000);
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Chamber · Admin Analytics</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0A0A08;--bg2:#111110;--bg3:#1A1A18;--bg4:#222220;--border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.13);--text:#F0EEE6;--text2:#8A8880;--text3:#555450;--accent:#C8F04A;--red:#FF5C3A;--amber:#FFB830;--teal:#3AFFD4;--purple:#7B61FF;--fd:'Syne',sans-serif;--fm:'DM Mono',monospace}
+body{background:var(--bg);color:var(--text);font-family:var(--fd);-webkit-font-smoothing:antialiased;display:flex;min-height:100vh}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:2px}
+.sb{width:220px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;bottom:0;left:0;z-index:50}
+.sb-logo{padding:18px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.logo{font-size:16px;font-weight:800;display:flex;align-items:center;gap:7px}
+.logo-mark{width:24px;height:24px;background:var(--accent);border-radius:5px;display:flex;align-items:center;justify-content:center}
+.logo em{color:var(--accent);font-style:normal}
+.sb-nav{flex:1;padding:10px 8px;overflow-y:auto}
+.sb-sec{font-size:10px;font-family:var(--fm);color:var(--text3);letter-spacing:.1em;text-transform:uppercase;padding:12px 8px 5px}
+.si{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:7px;cursor:pointer;transition:all .15s;font-size:13px;font-weight:500;color:var(--text2)}
+.si:hover{background:var(--bg3);color:var(--text)}
+.si.act{background:rgba(200,240,74,.1);color:var(--accent)}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);margin-left:auto;animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.sb-bot{padding:10px 10px;border-top:1px solid var(--border)}
+.main{flex:1;margin-left:220px;min-height:100vh;display:flex;flex-direction:column}
+.topbar{height:58px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;background:rgba(10,10,8,.92);backdrop-filter:blur(16px);z-index:40;flex-shrink:0}
+.tb-l{display:flex;align-items:center;gap:12px}
+.tb-title{font-size:14px;font-weight:700}
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-family:var(--fm);padding:3px 9px;border-radius:100px}
+.badge-live{background:rgba(200,240,74,.08);border:1px solid rgba(200,240,74,.2);color:var(--accent)}
+.badge-mock{background:rgba(255,184,48,.08);border:1px solid rgba(255,184,48,.2);color:var(--amber)}
+.badge-err{background:rgba(255,92,58,.08);border:1px solid rgba(255,92,58,.2);color:var(--red)}
+.tb-r{display:flex;align-items:center;gap:8px}
+
+/* DATA TOGGLE */
+.data-toggle{display:flex;align-items:center;gap:8px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:5px 12px;font-size:12px;font-family:var(--fm);cursor:pointer;color:var(--text2);transition:all .2s}
+.data-toggle:hover{border-color:var(--border2)}
+.data-toggle.real{border-color:rgba(200,240,74,.3);color:var(--accent)}
+.toggle-dot{width:8px;height:8px;border-radius:50%}
+
+.btn-sm{font-size:11px;font-family:var(--fm);font-weight:600;padding:6px 12px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;transition:all .15s}
+.btn-sm:hover{color:var(--text);border-color:var(--border2)}
+.btn-accent{background:var(--accent);color:#0A0A08;border-color:var(--accent)}
+.btn-accent:hover{background:#A8D030}
+select.date-sel{font-size:11px;font-family:var(--fm);background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:5px 10px;color:var(--text2);cursor:pointer;outline:none}
+
+.content{padding:24px;overflow-y:auto;flex:1}
+
+/* METRICS */
+.metrics-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
+.mc{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:18px;transition:border-color .2s;position:relative;overflow:hidden}
+.mc:hover{border-color:var(--border2)}
+.mc::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:0;transition:opacity .3s}
+.mc:hover::before{opacity:.4}
+.mc-label{font-size:10px;font-family:var(--fm);color:var(--text3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:7px}
+.mc-val{font-size:22px;font-weight:800;letter-spacing:-1px;margin-bottom:4px}
+.mc-sub{font-size:11px;font-family:var(--fm)}
+.pos{color:var(--accent)}.neg{color:var(--red)}.neu{color:var(--amber)}
+
+/* CARDS */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:16px}
+.card-head{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:700}
+.card-body{padding:18px}
+.chart-wrap{height:200px;position:relative}
+
+/* TABLES */
+.dt{width:100%;border-collapse:collapse;font-size:12px}
+.dt th{padding:8px 14px;text-align:left;font-size:10px;font-family:var(--fm);color:var(--text3);letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:400}
+.dt td{padding:11px 14px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle}
+.dt tr:last-child td{border-bottom:none}
+.dt tr:hover td{background:rgba(255,255,255,.015)}
+.plan-pill{font-size:9px;font-family:var(--fm);font-weight:700;padding:2px 7px;border-radius:100px}
+.pp-free{background:rgba(85,84,80,.3);color:#555450}
+.pp-starter{background:rgba(138,136,128,.2);color:#8A8880}
+.pp-growth{background:rgba(200,240,74,.1);color:var(--accent)}
+.pp-scale{background:rgba(58,255,212,.1);color:var(--teal)}
+.pp-cancelled{background:rgba(255,92,58,.1);color:var(--red)}
+.evt-pill{font-size:9px;font-family:var(--fm);font-weight:700;padding:2px 7px;border-radius:100px}
+.ep-signup{background:rgba(200,240,74,.1);color:var(--accent)}
+.ep-analyze{background:rgba(58,255,212,.1);color:var(--teal)}
+.ep-upgrade{background:rgba(123,97,255,.1);color:var(--purple)}
+.ep-churn{background:rgba(255,92,58,.1);color:var(--red)}
+.ep-feature_used{background:rgba(255,184,48,.1);color:var(--amber)}
+.ep-signin{background:rgba(138,136,128,.15);color:#8A8880}
+
+/* VIRAL */
+.search-box{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:8px 12px;font-size:12px;font-family:var(--fd);color:var(--text);outline:none;min-width:180px}
+.search-box:focus{border-color:var(--accent)}
+.search-box::placeholder{color:var(--text3)}
+.filter-btn{font-size:11px;font-family:var(--fd);font-weight:600;padding:7px 12px;border-radius:7px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;transition:all .15s}
+.filter-btn:hover{color:var(--text)}
+.filter-btn.act{background:rgba(200,240,74,.1);color:var(--accent);border-color:var(--accent)}
+.vcard{background:var(--bg3);border:1px solid var(--border);border-radius:9px;padding:16px;margin-bottom:10px}
+.vcard:hover{border-color:var(--border2)}
+.vcard-head{display:flex;gap:10px;margin-bottom:10px}
+.vicon{width:34px;height:34px;border-radius:7px;background:rgba(255,255,255,.04);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.vtitle{font-size:13px;font-weight:600;line-height:1.4}
+.vsrc{font-size:10px;font-family:var(--fm);color:var(--text3);margin-top:3px}
+.vscore{font-size:20px;font-weight:800;color:var(--accent);text-align:right;min-width:36px}
+.vtags{margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+.vtag{font-size:10px;font-family:var(--fm);padding:2px 8px;border-radius:100px;margin-right:5px;margin-bottom:4px;display:inline-block}
+.vt1{background:rgba(200,240,74,.08);color:var(--accent)}
+.vt2{background:rgba(58,255,212,.08);color:var(--teal)}
+.vt3{background:rgba(123,97,255,.08);color:var(--purple)}
+
+/* LOADING */
+.spinner-sm{width:12px;height:12px;border:2px solid rgba(255,255,255,.1);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-bar-wrap{height:2px;background:var(--border);border-radius:1px;overflow:hidden;margin-bottom:16px}
+.loading-bar-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--teal));width:0;border-radius:1px;transition:width .4s}
+
+/* FUNNEL */
+.funnel-row{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.funnel-lbl{width:180px;font-size:11px;font-family:var(--fm);color:var(--text2);text-align:right;flex-shrink:0}
+.funnel-track{flex:1;height:30px;background:var(--bg4);border-radius:5px;overflow:hidden}
+.funnel-fill{height:100%;display:flex;align-items:center;padding-left:10px;font-size:11px;font-weight:700;font-family:var(--fm);border-radius:5px;color:#0A0A08;transition:width 1s ease}
+.funnel-pct{width:48px;font-size:11px;font-family:var(--fm);color:var(--accent);text-align:right}
+
+/* COHORT */
+.cohort-table{width:100%;border-collapse:collapse;font-size:11px}
+.cohort-table th{padding:6px 8px;text-align:center;font-family:var(--fm);color:var(--text3);font-weight:400;font-size:9px}
+.cohort-table td{padding:4px 3px;text-align:center;border-radius:4px}
+.cohort-table td:first-child{text-align:left;color:var(--text2);font-family:var(--fm);padding-left:8px}
+
+/* STATUS */
+#data-status{font-size:11px;font-family:var(--fm);padding:3px 8px;border-radius:5px}
+.err-banner{background:rgba(255,92,58,.08);border:1px solid rgba(255,92,58,.2);border-radius:8px;padding:12px 16px;font-size:12px;font-family:var(--fm);color:var(--red);margin-bottom:16px}
+<style id="affiliate-styles-to-add">
+/* AFFILIATE TAB */
+.aff-create-form{background:rgba(200,240,74,.04);border:1px solid rgba(200,240,74,.12);border-radius:10px;padding:20px;margin-bottom:20px}
+.aff-create-form h3{font-size:13px;font-weight:700;margin-bottom:14px;color:var(--accent)}
+.aff-form-grid{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:end}
+.aff-input{background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:9px 12px;font-size:12px;font-family:var(--fd);color:var(--text);outline:none;width:100%}
+.aff-input:focus{border-color:var(--accent)}
+.aff-input::placeholder{color:var(--text3)}
+.aff-input-label{font-size:9px;font-family:var(--fm);color:var(--text3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:4px}
+ 
+.aff-code-box{background:var(--bg3);border:1px solid rgba(200,240,74,.2);border-radius:8px;padding:9px 14px;font-size:14px;font-weight:700;font-family:var(--fm);color:var(--accent);letter-spacing:2px;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:8px}
+.aff-code-box:hover{background:var(--adim)}
+ 
+.aff-row-clickable{cursor:pointer}
+.aff-row-clickable:hover td{background:rgba(200,240,74,.04) !important}
+.aff-row-expanded td{background:rgba(200,240,74,.03) !important}
+ 
+/* AFFILIATE DETAIL MODAL */
+.aff-detail{background:var(--bg2);border:1px solid rgba(200,240,74,.2);border-radius:12px;padding:24px;margin-top:0;margin-bottom:16px;display:none}
+.aff-detail.open{display:block}
+.aff-detail-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.aff-detail-name{font-size:18px;font-weight:800;letter-spacing:-.3px}
+.aff-detail-code{font-size:11px;font-family:var(--fm);color:var(--accent);margin-top:3px}
+.aff-detail-metrics{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
+.aff-dm{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center}
+.aff-dm-val{font-size:20px;font-weight:800;letter-spacing:-1px;color:var(--accent)}
+.aff-dm-lbl{font-size:9px;font-family:var(--fm);color:var(--text3);margin-top:3px;letter-spacing:.04em;text-transform:uppercase}
+.status-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:5px}
+.sd-active{background:#C8F04A}
+.sd-paused{background:#FFB830}
+.sd-terminated{background:#FF5C3A}
+</style>
+</style>
+</head>
+<body>
+
+<aside class="sb">
+  <div class="sb-logo">
+    <div class="logo">
+      <div class="logo-mark"><svg viewBox="0 0 16 16" fill="none" width="10" height="10"><polygon points="8,1 15,5 15,11 8,15 1,11 1,5" fill="#0A0A08"/></svg></div>
+      Chamber<em>.</em>
+    </div>
+  </div>
+  <div class="sb-nav">
+    <div class="sb-sec">Analytics</div>
+    <div class="si act" onclick="showTab('overview',this)">📊 Overview</div>
+    <div class="si" onclick="showTab('users',this)">👥 Users</div>
+    <div class="si" onclick="showTab('revenue',this)">💰 Revenue</div>
+    <div class="si" onclick="showTab('reports',this)">📄 Reports</div>
+    <div class="si" onclick="showTab('funnel',this)">🔽 Funnel</div>
+    <div class="si" onclick="showTab('retention',this)">🔄 Retention</div>
+    <div class="sb-sec">Tools</div>
+    <div class="si" onclick="showTab('viral',this)">⚡ Viral Scraper <div class="live-dot"></div></div>
+    <div class="si" onclick="showTab('events',this)">📡 Live Events</div>
+    <div class="sb-sec">Revenue</div>
+    <div class="si" onclick="showTab('affiliates',this)">🤝 Affiliates</div>
+  </div>
+  <div class="sb-bot">
+    <div style="font-size:10px;font-family:var(--fm);color:var(--text3);padding:8px">
+      <a href="app.html" style="color:var(--accent);text-decoration:none">← Back to app</a>
+    </div>
+  </div>
+</aside>
+
+<div class="main">
+  <div class="topbar">
+    <div class="tb-l">
+      <div class="tb-title" id="page-title">Overview</div>
+      <span class="badge badge-live" id="data-badge"><span class="live-dot" style="width:5px;height:5px;background:var(--accent)"></span>Live data</span>
+    </div>
+    <div class="tb-r">
+      <!-- REAL / PLACEHOLDER TOGGLE -->
+      <div class="data-toggle real" id="data-toggle" onclick="toggleDataMode()" title="Toggle real vs placeholder data">
+        <div class="toggle-dot" id="toggle-dot" style="background:var(--accent)"></div>
+        <span id="toggle-label">Real data</span>
+      </div>
+      <select class="date-sel" id="date-sel" onchange="setDays(+this.value);refresh()">
+        <option value="7">7 days</option>
+        <option value="30" selected>30 days</option>
+        <option value="90">90 days</option>
+      </select>
+      <button class="btn-sm" onclick="refresh()" id="refresh-btn">↻ Refresh</button>
+      <button class="btn-sm btn-accent" onclick="window.print()">↓ Export</button>
+    </div>
+  </div>
+  <div class="content" id="content"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script id="affiliate-script-to-add">
+ 
+    // ── AFFILIATES TAB ─────────────────────────────────────────────
+    async function renderAffiliates() {
+      const el = document.getElementById('content');
+      el.innerHTML = `
+        <!-- CREATE FORM -->
+        <div class="aff-create-form">
+          <h3>➕ Create New Affiliate</h3>
+          <div class="aff-form-grid">
+            <div>
+              <div class="aff-input-label">Full Name *</div>
+              <input class="aff-input" id="aff-name" placeholder="e.g. John Doe" />
+            </div>
+            <div>
+              <div class="aff-input-label">Email</div>
+              <input class="aff-input" id="aff-email" type="email" placeholder="john@example.com" />
+            </div>
+            <div>
+              <div class="aff-input-label">Commission %</div>
+              <input class="aff-input" id="aff-pct" type="number" placeholder="25" value="25" min="1" max="50" />
+            </div>
+            <button onclick="createAffiliate()" class="btn-sm btn-accent" style="white-space:nowrap;padding:9px 16px;font-family:var(--fd);font-weight:700;font-size:12px;background:var(--accent);color:#0A0A08;border:none;border-radius:7px;cursor:pointer;transition:all .2s" onmouseover="this.style.background='#A8D030'" onmouseout="this.style.background='var(--accent)'">
+              Create Affiliate →
+            </button>
+          </div>
+          <div style="margin-top:10px;font-size:11px;font-family:var(--fm);color:var(--text3)">
+            A unique affiliate link will be generated: <code style="color:var(--accent)">yourapp.com/login.html?ref=AFF-NAME-XXXX</code>
+            — When used, user gets <strong style="color:var(--accent)">50% off first month</strong>, affiliate earns <strong style="color:var(--teal)">25% monthly commission</strong>.
+          </div>
+        </div>
+     
+        <!-- NEW AFFILIATE RESULT -->
+        <div id="new-aff-result"></div>
+     
+        <!-- AFFILIATES TABLE -->
+        <div class="card">
+          <div class="card-head">🤝 All Affiliates
+            <div style="display:flex;gap:6px">
+              <button onclick="renderAffiliates()" class="btn-sm" style="font-family:var(--fd)">↻ Refresh</button>
+            </div>
+          </div>
+          <div id="aff-table-wrap">
+            <div style="padding:40px;text-align:center;color:var(--text3);font-family:var(--fm);font-size:12px">
+              <div class="spinner-sm"></div>&nbsp; Loading affiliates…
+            </div>
+          </div>
+        </div>
+      `;
+     
+      await loadAffiliatesTable();
+    }
+     
+    async function loadAffiliatesTable() {
+      const wrap = document.getElementById('aff-table-wrap');
+      if (!wrap) return;
+      try {
+        const data = await api('/api/admin/affiliates');
+        const affs = data.affiliates || [];
+     
+        if (!affs.length) {
+          wrap.innerHTML = `<div style="padding:48px;text-align:center;color:var(--text3);font-family:var(--fm);font-size:12px">No affiliates yet — create one above</div>`;
+          return;
+        }
+     
+        wrap.innerHTML = `<div style="overflow-x:auto"><table class="dt">
+          <thead><tr>
+            <th>Name</th><th>Code / Link</th><th>Signups</th>
+            <th>MRR Generated</th><th>Pending Commission</th><th>Paid Commission</th>
+            <th>Status</th><th>Commission %</th><th>Created</th><th></th>
+          </tr></thead>
+          <tbody id="aff-tbody"></tbody>
+        </table></div>`;
+     
+        const tbody = document.getElementById('aff-tbody');
+        affs.forEach(a => {
+          const statusColor = a.status==='active'?'var(--accent)':a.status==='paused'?'var(--amber)':'var(--red)';
+          const row = document.createElement('tr');
+          row.className = 'aff-row-clickable';
+          row.id = `aff-row-${a.id}`;
+          row.innerHTML = `
+            <td style="font-weight:700">${a.name}<br><span style="font-size:10px;color:var(--text3);font-weight:400">${a.email||'—'}</span></td>
+            <td>
+              <div class="aff-code-box" onclick="event.stopPropagation();copyAffCode('${a.code}','${window.location.origin}')" title="Click to copy affiliate link">
+                ${a.code} 📋
+              </div>
+            </td>
+            <td style="font-family:var(--fm);font-weight:700;color:var(--teal)">${a.total_signups||0}</td>
+            <td style="font-family:var(--fm);color:var(--accent)">$${(+a.total_mrr_generated||0).toFixed(0)}</td>
+            <td style="font-family:var(--fm);color:var(--amber)">$${(+a.pending_commission||0).toFixed(2)}</td>
+            <td style="font-family:var(--fm);color:var(--text2)">$${(+a.paid_commission||0).toFixed(2)}</td>
+            <td><span style="font-family:var(--fm);font-size:10px;font-weight:700;color:${statusColor}">
+              <span class="status-dot sd-${a.status}"></span>${(a.status||'active').toUpperCase()}
+            </span></td>
+            <td style="font-family:var(--fm);color:var(--accent)">${a.commission_pct}%</td>
+            <td style="font-family:var(--fm);font-size:10px;color:var(--text3)">${a.created_at?new Date(a.created_at).toLocaleDateString():'—'}</td>
+            <td><button onclick="event.stopPropagation();toggleAffDetail('${a.id}')" style="font-size:10px;font-family:var(--fm);padding:4px 9px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer" id="aff-toggle-${a.id}">Details ▼</button></td>
+          `;
+          row.onclick = () => toggleAffDetail(a.id);
+          tbody.appendChild(row);
+     
+          // Detail row (hidden)
+          const detailRow = document.createElement('tr');
+          detailRow.id = `aff-detail-row-${a.id}`;
+          detailRow.innerHTML = `<td colspan="10" style="padding:0"><div class="aff-detail" id="aff-detail-${a.id}"></div></td>`;
+          tbody.appendChild(detailRow);
+        });
+     
+      } catch(e) {
+        wrap.innerHTML = `<div style="padding:20px;color:var(--red);font-family:var(--fm);font-size:12px">Error: ${e.message}</div>`;
+      }
+    }
+     
+    async function toggleAffDetail(id) {
+      const panel  = document.getElementById(`aff-detail-${id}`);
+      const toggle = document.getElementById(`aff-toggle-${id}`);
+      if (!panel) return;
+      if (panel.classList.contains('open')) {
+        panel.classList.remove('open');
+        panel.innerHTML = '';
+        if (toggle) toggle.textContent = 'Details ▼';
+        return;
+      }
+      panel.classList.add('open');
+      panel.innerHTML = '<div style="padding:20px;color:var(--text3);font-family:var(--fm);font-size:12px"><div class="spinner-sm"></div> Loading…</div>';
+      if (toggle) toggle.textContent = 'Close ▲';
+      await loadAffDetail(id, panel);
+    }
+     
+    async function loadAffDetail(id, panel) {
+      try {
+        const data = await api(`/api/admin/affiliates/${id}`);
+        const a    = data.affiliate;
+        const convs = data.conversions || [];
+        const series = data.series || [];
+     
+        const link = `${window.location.origin}/login.html?ref=${a.code}`;
+     
+        panel.innerHTML = `
+          <div class="aff-detail-head">
+            <div>
+              <div class="aff-detail-name">${a.name}</div>
+              <div class="aff-detail-code">${a.code}</div>
+              <div style="font-size:11px;font-family:var(--fm);color:var(--text3);margin-top:4px">
+                Affiliate link: <span style="color:var(--teal)">${link}</span>
+                <button onclick="navigator.clipboard.writeText('${link}').then(()=>toast('Link copied!'))" style="margin-left:8px;font-size:10px;font-family:var(--fm);padding:2px 8px;border-radius:4px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer">Copy</button>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <select onchange="updateAffStatus('${id}',this.value)" style="font-size:11px;font-family:var(--fm);background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:5px 10px;color:var(--text2);cursor:pointer;outline:none">
+                <option value="active"     ${a.status==='active'?'selected':''}>Active</option>
+                <option value="paused"     ${a.status==='paused'?'selected':''}>Paused</option>
+                <option value="terminated" ${a.status==='terminated'?'selected':''}>Terminated</option>
+              </select>
+              <button onclick="markPaid('${id}')" style="font-size:11px;font-family:var(--fm);padding:6px 12px;border-radius:6px;border:none;background:var(--accent);color:#0A0A08;font-weight:700;cursor:pointer">Mark Unpaid → Paid</button>
+            </div>
+          </div>
+     
+          <!-- METRICS ROW -->
+          <div class="aff-detail-metrics">
+            <div class="aff-dm"><div class="aff-dm-val">${a.total_signups||0}</div><div class="aff-dm-lbl">Total signups</div></div>
+            <div class="aff-dm"><div class="aff-dm-val">$${(+a.total_mrr_generated||0).toFixed(0)}</div><div class="aff-dm-lbl">MRR generated</div></div>
+            <div class="aff-dm"><div class="aff-dm-val" style="color:var(--amber)">$${(+a.pending_commission||0).toFixed(2)}</div><div class="aff-dm-lbl">Pending payout</div></div>
+            <div class="aff-dm"><div class="aff-dm-val" style="color:var(--text2)">$${(+a.paid_commission||0).toFixed(2)}</div><div class="aff-dm-lbl">Total paid</div></div>
+            <div class="aff-dm"><div class="aff-dm-val" style="color:var(--teal)">${a.commission_pct}%</div><div class="aff-dm-lbl">Commission rate</div></div>
+          </div>
+     
+          <!-- CHART -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+            <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px">
+              <div style="font-size:11px;font-family:var(--fm);color:var(--text3);margin-bottom:10px;letter-spacing:.05em;text-transform:uppercase">Signups over time</div>
+              <div style="height:140px;position:relative"><canvas id="aff-chart-${id}"></canvas></div>
+            </div>
+            <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px">
+              <div style="font-size:11px;font-family:var(--fm);color:var(--text3);margin-bottom:10px;letter-spacing:.05em;text-transform:uppercase">Plan breakdown</div>
+              <div style="height:140px;position:relative"><canvas id="aff-plan-chart-${id}"></canvas></div>
+            </div>
+          </div>
+     
+          <!-- CONVERSIONS TABLE -->
+          <div style="font-size:11px;font-family:var(--fm);color:var(--text3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:8px">Conversion History (${convs.length})</div>
+          <div style="overflow-x:auto;max-height:280px;overflow-y:auto">
+            <table class="dt" style="font-size:11px">
+              <thead><tr><th>Email</th><th>Plan</th><th>MRR</th><th>Commission</th><th>Status</th><th>Date</th></tr></thead>
+              <tbody>
+                ${convs.length ? convs.map(c=>`<tr>
+                  <td>${c.user_email||'—'}</td>
+                  <td><span style="font-family:var(--fm);font-size:9px;font-weight:700;color:var(--accent)">${c.plan||'—'}</span></td>
+                  <td style="font-family:var(--fm);color:var(--accent)">$${c.mrr_value||0}</td>
+                  <td style="font-family:var(--fm);color:var(--amber)">$${(+c.commission_amount||0).toFixed(2)}</td>
+                  <td><span style="font-family:var(--fm);font-size:9px;color:${c.payment_status==='paid'?'var(--teal)':c.payment_status==='cancelled'?'var(--red)':'var(--amber)'}">${(c.payment_status||'pending').toUpperCase()}</span></td>
+                  <td style="color:var(--text3);font-family:var(--fm);font-size:10px">${c.created_at?new Date(c.created_at).toLocaleDateString():'—'}</td>
+                </tr>`).join('') : '<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:20px">No conversions yet</td></tr>'}
+              </tbody>
+            </table>
+          </div>
+        `;
+     
+        // Draw charts
+        if (typeof Chart !== 'undefined') {
+          // Signups over time
+          const ctx1 = document.getElementById(`aff-chart-${id}`)?.getContext('2d');
+          if (ctx1 && series.length) {
+            new Chart(ctx1, {
+              type:'bar',
+              data:{labels:series.map(s=>s.date.slice(5)),datasets:[{label:'Signups',data:series.map(s=>s.signups),backgroundColor:'rgba(200,240,74,.5)',borderRadius:2}]},
+              options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{...CB.plugins.tooltip}},scales:{x:{...CB.scales.x,ticks:{...CB.scales.x.ticks,maxTicksLimit:6}},y:{...CB.scales.y}}}
+            });
+          }
+          // Plan breakdown
+          const planCounts = {};
+          convs.forEach(c=>{if(c.plan){planCounts[c.plan]=(planCounts[c.plan]||0)+1;}});
+          const ctx2 = document.getElementById(`aff-plan-chart-${id}`)?.getContext('2d');
+          if (ctx2 && Object.keys(planCounts).length) {
+            new Chart(ctx2, {
+              type:'doughnut',
+              data:{labels:Object.keys(planCounts),datasets:[{data:Object.values(planCounts),backgroundColor:['#8A8880','#C8F04A','#3AFFD4'],borderWidth:0}]},
+              options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#555450',font:{family:'DM Mono',size:9},boxWidth:8,padding:6}},tooltip:{...CB.plugins.tooltip}},cutout:'55%'}
+            });
+          }
+        }
+      } catch(e) {
+        panel.innerHTML = `<div style="padding:16px;color:var(--red);font-family:var(--fm);font-size:12px">Error loading: ${e.message}</div>`;
+      }
+    }
+     
+    async function createAffiliate() {
+      const name = document.getElementById('aff-name')?.value?.trim();
+      const email= document.getElementById('aff-email')?.value?.trim();
+      const pct  = parseInt(document.getElementById('aff-pct')?.value) || 25;
+      if (!name) { alert('Name is required'); return; }
+     
+      try {
+        const data = await api('/api/admin/affiliates', {
+          method:'POST',
+          headers:{'Content-Type':'application/json','x-admin-secret':ADMIN_SECRET},
+          body: JSON.stringify({ name, email, commission_pct: pct }),
+        });
+        const aff  = data.affiliate;
+        const link = `${window.location.origin}/login.html?ref=${aff.code}`;
+        const res  = document.getElementById('new-aff-result');
+        if (res) {
+          res.innerHTML = `
+            <div style="background:rgba(200,240,74,.08);border:1px solid rgba(200,240,74,.25);border-radius:9px;padding:16px;margin-bottom:16px">
+              <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:8px">✓ Affiliate created!</div>
+              <div style="font-size:11px;font-family:var(--fm);color:var(--text2);margin-bottom:6px">Code: <strong style="color:var(--accent);letter-spacing:1px">${aff.code}</strong></div>
+              <div style="font-size:11px;font-family:var(--fm);color:var(--text2);margin-bottom:10px">Link: <span style="color:var(--teal)">${link}</span></div>
+              <button onclick="navigator.clipboard.writeText('${link}').then(()=>toast('Link copied!'))" style="font-size:11px;font-family:var(--fm);padding:5px 12px;border-radius:6px;border:1px solid rgba(200,240,74,.3);background:var(--adim);color:var(--accent);cursor:pointer">Copy affiliate link</button>
+            </div>`;
+        }
+        // Clear form
+        document.getElementById('aff-name').value = '';
+        document.getElementById('aff-email').value = '';
+        document.getElementById('aff-pct').value = '25';
+        // Reload table
+        await loadAffiliatesTable();
+      } catch(e) { alert('Error: ' + e.message); }
+    }
+     
+    function copyAffCode(code, origin) {
+      const link = `${origin}/login.html?ref=${code}`;
+      navigator.clipboard.writeText(link).then(() => toast('Affiliate link copied!'));
+    }
+     
+    async function updateAffStatus(id, status) {
+      try {
+        await api(`/api/admin/affiliates/${id}`, {
+          method:'PATCH',
+          headers:{'Content-Type':'application/json','x-admin-secret':ADMIN_SECRET},
+          body: JSON.stringify({ status }),
+        });
+        toast('Status updated');
+      } catch(e) { alert('Error: '+e.message); }
+    }
+     
+    async function markPaid(id) {
+      if (!confirm('Mark all pending commissions as PAID for this affiliate?')) return;
+      try {
+        await api(`/api/admin/affiliates/${id}/mark-paid`, {
+          method:'POST',
+          headers:{'Content-Type':'application/json','x-admin-secret':ADMIN_SECRET},
+          body: '{}',
+        });
+        toast('Marked as paid ✓');
+        await toggleAffDetail(id); // close
+        await loadAffiliatesTable(); // reload
+      } catch(e) { alert('Error: '+e.message); }
+    }
+     
+    // Simple toast for admin page
+    function toast(msg) {
+      let el = document.getElementById('admin-toast');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'admin-toast';
+        el.style.cssText = 'position:fixed;bottom:20px;right:20px;background:var(--bg3);border:1px solid rgba(200,240,74,.3);border-radius:8px;padding:10px 16px;font-size:12px;font-family:var(--fm);color:var(--accent);z-index:999;transition:all .3s;transform:translateY(60px);opacity:0';
+        document.body.appendChild(el);
+      }
+      el.textContent = '✓ ' + msg;
+      el.style.transform = 'translateY(0)';
+      el.style.opacity = '1';
+      setTimeout(() => { el.style.transform = 'translateY(60px)'; el.style.opacity = '0'; }, 2500);
+    }
+    </script>
+<script>
+// ═══════════════════════════════════════════════════════════
+// CONFIG — change these to match your .env
+// ═══════════════════════════════════════════════════════════
+const API_BASE     = window.location.hostname === 'localhost' ? 'http://localhost:3001' : 'https://your-api.com';
+const ADMIN_SECRET = 'change_me_admin_secret'; // must match ADMIN_SECRET in .env
+
+// ═══════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════
+let useRealData  = true;
+let currentTab   = 'overview';
+let days         = 30;
+let charts       = {};
+let liveInterval;
+let realOverview = null;  // cached real data
+
+// ═══════════════════════════════════════════════════════════
+// TOGGLE
+// ═══════════════════════════════════════════════════════════
+function toggleDataMode() {
+  useRealData = !useRealData;
+  const tog   = document.getElementById('data-toggle');
+  const dot   = document.getElementById('toggle-dot');
+  const lbl   = document.getElementById('toggle-label');
+  const badge = document.getElementById('data-badge');
+  if (useRealData) {
+    tog.classList.add('real');
+    dot.style.background = 'var(--accent)';
+    lbl.textContent = 'Real data';
+    badge.className = 'badge badge-live';
+    badge.innerHTML = '<span style="width:5px;height:5px;border-radius:50%;background:var(--accent)"></span> Live data';
+  } else {
+    tog.classList.remove('real');
+    dot.style.background = 'var(--amber)';
+    lbl.textContent = 'Placeholder';
+    badge.className = 'badge badge-mock';
+    badge.innerHTML = '🎭 Demo data';
+  }
+  refresh();
+}
+
+function setDays(d) { days = d; }
+
+function refresh() {
+  clearInterval(liveInterval);
+  Object.values(charts).forEach(c => { try { c.destroy(); } catch {} });
+  charts = {};
+  document.getElementById('content').innerHTML = '';
+  const tab = currentTab;
+  currentTab = '';
+  const el = document.querySelector(`.si.act`);
+  showTab(tab, el);
+}
+
+// ═══════════════════════════════════════════════════════════
+// API HELPER (sends admin secret header)
+// ═══════════════════════════════════════════════════════════
+async function api(path) {
+  const token = localStorage.getItem('chamber_token') || '';
+  const headers = { 'x-admin-secret': ADMIN_SECRET };
+  if (token) headers['Authorization'] = 'Bearer ' + token;
+  const res = await fetch(API_BASE + path, { headers });
+  if (!res.ok) throw new Error(`API ${res.status}: ${await res.text()}`);
+  return res.json();
+}
+
+// ═══════════════════════════════════════════════════════════
+// PLACEHOLDER DATA GENERATORS
+// ═══════════════════════════════════════════════════════════
+function rnd(base, growth, noise, n) {
+  return Array.from({length:n},(_,i)=>{
+    const t = base * Math.pow(1+growth/n,i);
+    return Math.max(0,Math.round(t + (Math.random()-.5)*noise*t));
+  });
+}
+function dates(n) {
+  return Array.from({length:n},(_,i)=>{
+    const d=new Date(); d.setDate(d.getDate()-n+i+1);
+    return d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  });
+}
+const MOCK_OVERVIEW = {mrr:4821,arr:57852,total_users:4821,paying_users:1446,free_users:3375,starter_count:480,growth_count:720,scale_count:246,new_signups:288,new_reports:1140,total_reports:12480,conversion_rate:30.0,period_days:30};
+
+// ═══════════════════════════════════════════════════════════
+// CHART DEFAULTS
+// ═══════════════════════════════════════════════════════════
+const CB = {
+  responsive:true, maintainAspectRatio:false,
+  plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(17,17,16,.95)',titleColor:'#F0EEE6',bodyColor:'#8A8880',borderColor:'rgba(255,255,255,.1)',borderWidth:1,titleFont:{family:'DM Mono',size:10},bodyFont:{family:'DM Mono',size:10},padding:10}},
+  scales:{x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#555450',font:{family:'DM Mono',size:9},maxTicksLimit:8}},y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#555450',font:{family:'DM Mono',size:9}}}}
+};
+function grad(ctx,c1,c2='rgba(0,0,0,0)'){const g=ctx.createLinearGradient(0,0,0,200);g.addColorStop(0,c1);g.addColorStop(1,c2);return g;}
+const fmt = n=>n>=1e6?'$'+(n/1e6).toFixed(2)+'M':n>=1e3?'$'+(n/1e3).toFixed(1)+'k':'$'+Math.round(n).toLocaleString();
+const fmtN = n=>n>=1e6?(n/1e6).toFixed(1)+'M':n>=1e3?(n/1e3).toFixed(1)+'k':Math.round(n).toLocaleString();
+
+// ═══════════════════════════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════════════════════════
+function showTab(key, el) {
+  currentTab = key;
+  document.querySelectorAll('.si').forEach(s=>s.classList.remove('act'));
+  if (el) el.classList.add('act');
+  document.getElementById('page-title').textContent = {overview:'Overview',users:'Users',revenue:'Revenue',reports:'Reports',funnel:'Funnel',retention:'Retention',viral:'Viral Scraper',affiliates:'Affiliates',events:'Live Events'}[key]||key;
+  clearInterval(liveInterval);
+  Object.values(charts).forEach(c=>{try{c.destroy()}catch{}});
+  charts={};
+  document.getElementById('content').innerHTML = '<div style="padding:40px;text-align:center;color:var(--text3);font-family:var(--fm);font-size:12px"><div class="spinner-sm"></div>&nbsp; Loading…</div>';
+  ({overview:renderOverview,users:renderUsers,revenue:renderRevenue,reports:renderReports,funnel:renderFunnel,affiliates:renderAffiliates,retention:renderRetention,viral:renderViral,events:renderEvents}[key]||renderOverview)();
+}
+
+// ═══════════════════════════════════════════════════════════
+// OVERVIEW
+// ═══════════════════════════════════════════════════════════
+async function renderOverview() {
+  let d = MOCK_OVERVIEW;
+  let series = dates(days).map((dt,i)=>({date:dt,signups:rnd(12,.35,.4,days)[i],analyses:rnd(45,.3,.35,days)[i]}));
+  let err = '';
+
+  if (useRealData) {
+    try {
+      [d, {series}] = await Promise.all([
+        api(`/api/admin/overview?days=${days}`),
+        api(`/api/admin/time-series?days=${days}`),
+      ]);
+      realOverview = d;
+      // series from API has {date,signups,analyses} already
+    } catch (e) {
+      err = e.message;
+      d = realOverview || MOCK_OVERVIEW;
+    }
+  }
+
+  const labels = series.map(s=>s.date);
+  const signupSeries  = series.map(s=>s.signups);
+  const analysisSeries= series.map(s=>s.analyses);
+
+  document.getElementById('content').innerHTML = `
+    ${err?`<div class="err-banner">⚠ API error: ${err} — showing ${realOverview?'last cached':'placeholder'} data</div>`:''}
+    <div class="metrics-row">
+      ${[
+        ['MRR',fmt(d.mrr),`ARR: ${fmt(d.arr)}`,'pos','💰'],
+        ['Total Users',fmtN(d.total_users),`${fmtN(d.paying_users)} paying`,'pos','👥'],
+        ['New Signups',fmtN(d.new_signups),`last ${d.period_days||days} days`,'pos','📥'],
+        ['Reports Run',fmtN(d.new_reports),`${fmtN(d.total_reports||0)} total`,'pos','⚡'],
+        ['Conversion',d.conversion_rate+'%','free → paid','neu','💳'],
+      ].map(([l,v,s,c,i])=>`<div class="mc"><div class="mc-label">${i} ${l}</div><div class="mc-val">${v}</div><div class="mc-sub ${c}">${s}</div></div>`).join('')}
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px">
+      <div class="card" style="grid-column:span 2"><div class="card-head">📈 Signups &amp; Analyses<span style="font-size:10px;font-family:var(--fm);color:var(--text3);font-weight:400">${days} days</span></div><div class="card-body"><div class="chart-wrap"><canvas id="ov-main"></canvas></div></div></div>
+      <div class="card"><div class="card-head">🥧 Plan Breakdown</div><div class="card-body"><div class="chart-wrap"><canvas id="ov-plans"></canvas></div></div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div class="card"><div class="card-head">📊 MRR Composition</div><div class="card-body" id="mrr-comp"></div></div>
+      <div class="card"><div class="card-head">🌍 Geography (placeholder)</div><div class="card-body" id="geo"></div></div>
+    </div>`;
+
+  // Main chart
+  const c1=document.getElementById('ov-main').getContext('2d');
+  charts.main=new Chart(c1,{type:'line',data:{labels,datasets:[
+    {label:'Signups',data:signupSeries,borderColor:'#C8F04A',backgroundColor:grad(c1,'rgba(200,240,74,.2)'),fill:true,tension:.4,pointRadius:0,yAxisID:'y'},
+    {label:'Analyses',data:analysisSeries,borderColor:'#3AFFD4',backgroundColor:'transparent',fill:false,tension:.4,pointRadius:0,borderDash:[4,4],yAxisID:'y1'},
+  ]},options:{...CB,plugins:{...CB.plugins,legend:{display:true,labels:{color:'#555450',font:{family:'DM Mono',size:9},boxWidth:10,padding:12}}},scales:{x:CB.scales.x,y:{...CB.scales.y,position:'left'},y1:{...CB.scales.y,position:'right',grid:{display:false}}}}});
+
+  // Plans doughnut
+  const c2=document.getElementById('ov-plans').getContext('2d');
+  charts.plans=new Chart(c2,{type:'doughnut',data:{labels:['Free',`Starter (${fmtN(d.starter_count)})`,`Growth (${fmtN(d.growth_count)})`,`Scale (${fmtN(d.scale_count)})`],datasets:[{data:[d.free_users,d.starter_count,d.growth_count,d.scale_count],backgroundColor:['#333330','#8A8880','#C8F04A','#3AFFD4'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#555450',font:{family:'DM Mono',size:9},boxWidth:8,padding:8}},tooltip:CB.plugins.tooltip},cutout:'62%'}});
+
+  // MRR breakdown
+  const mrrComp = [
+    {l:'Starter MRR',v:fmt(d.starter_count*29),c:'#8A8880'},
+    {l:'Growth MRR',v:fmt(d.growth_count*99),c:'#C8F04A'},
+    {l:'Scale MRR',v:fmt(d.scale_count*299),c:'#3AFFD4'},
+    {l:'ARPU',v:d.paying_users>0?fmt(d.mrr/d.paying_users):'—',c:'var(--amber)'},
+    {l:'LTV (est.)',v:d.paying_users>0?fmt((d.mrr/d.paying_users)/0.05):'—',c:'var(--text)'},
+  ];
+  document.getElementById('mrr-comp').innerHTML=mrrComp.map(r=>`<div style="display:flex;justify-content:space-between;margin-bottom:10px;font-size:13px"><span style="color:var(--text2)">${r.l}</span><span style="font-weight:700;color:${r.c}">${r.v}</span></div>`).join('');
+
+  // Geo (always placeholder — no geo data in DB)
+  document.getElementById('geo').innerHTML=[
+    {f:'🇺🇸',c:'United States',p:42},{f:'🇬🇧',c:'United Kingdom',p:14},{f:'🇨🇦',c:'Canada',p:9},{f:'🇦🇺',c:'Australia',p:7},{f:'🇩🇪',c:'Germany',p:5},{f:'🇮🇳',c:'India',p:4},
+  ].map(g=>`<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span>${g.f}</span><span style="flex:1;font-size:12px;color:var(--text2)">${g.c}</span><span style="font-size:11px;font-family:var(--fm);color:var(--accent)">${g.p}%</span><div style="width:50px;height:3px;background:var(--bg4);border-radius:2px;overflow:hidden"><div style="height:100%;background:var(--accent);width:${g.p*2}%"></div></div></div>`).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+// USERS
+// ═══════════════════════════════════════════════════════════
+async function renderUsers() {
+  let users = [], total = 0, err = '';
+  if (useRealData) {
+    try { const d=await api('/api/admin/users?limit=50'); users=d.users||[]; total=d.total||0; }
+    catch(e) { err=e.message; }
+  }
+  if (!users.length) {
+    // placeholder
+    users=[{email:'maya@glowlab.co',plan:'growth',total_reports:12,created_at:new Date(Date.now()-86400000*5).toISOString(),last_report_at:new Date(Date.now()-3600000*2).toISOString()},{email:'jordan@drift.co',plan:'scale',total_reports:34,created_at:new Date(Date.now()-86400000*8).toISOString()},{email:'alex@trailpro.com',plan:'growth',total_reports:8,created_at:new Date(Date.now()-86400000*2).toISOString()},{email:'sam@beanflow.com',plan:'starter',total_reports:3,created_at:new Date(Date.now()-86400000*1).toISOString()},{email:'free@test.com',plan:'free',total_reports:1,created_at:new Date().toISOString()}];
+    total=users.length;
+  }
+
+  document.getElementById('content').innerHTML=`
+    ${err?`<div class="err-banner">⚠ ${err}</div>`:''}
+    <div class="metrics-row" style="grid-template-columns:repeat(4,1fr)">
+      <div class="mc"><div class="mc-label">Total Users</div><div class="mc-val">${fmtN(total||users.length)}</div><div class="mc-sub pos">from DB</div></div>
+      <div class="mc"><div class="mc-label">Paying</div><div class="mc-val">${users.filter(u=>['starter','growth','scale'].includes(u.plan)).length}</div><div class="mc-sub pos">of shown</div></div>
+      <div class="mc"><div class="mc-label">Free</div><div class="mc-val">${users.filter(u=>u.plan==='free').length}</div><div class="mc-sub neu">upgrade potential</div></div>
+      <div class="mc"><div class="mc-label">Avg Reports</div><div class="mc-val">${users.length?Math.round(users.reduce((a,u)=>a+(u.total_reports||0),0)/users.length):0}</div><div class="mc-sub neu">per user shown</div></div>
+    </div>
+    <div class="card"><div class="card-head">👥 Users (${useRealData?'live from Supabase':'placeholder'})<span style="font-size:10px;font-family:var(--fm);color:var(--text3);font-weight:400">${total||users.length} total</span></div>
+    <div style="overflow-x:auto"><table class="dt"><thead><tr><th>Email</th><th>Plan</th><th>Reports</th><th>Joined</th><th>Last active</th></tr></thead>
+    <tbody>${users.map(u=>`<tr>
+      <td style="font-weight:600">${u.email||u.id||'—'}</td>
+      <td><span class="plan-pill pp-${u.plan||'free'}">${(u.plan||'free').toUpperCase()}</span></td>
+      <td style="font-family:var(--fm);font-size:11px">${u.total_reports||0}</td>
+      <td style="font-family:var(--fm);font-size:10px;color:var(--text3)">${u.created_at?new Date(u.created_at).toLocaleDateString():'-'}</td>
+      <td style="font-family:var(--fm);font-size:10px;color:var(--text3)">${u.last_report_at?timeAgo(u.last_report_at):'-'}</td>
+    </tr>`).join('')}</tbody></table></div></div>`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// REVENUE
+// ═══════════════════════════════════════════════════════════
+async function renderRevenue() {
+  let d=MOCK_OVERVIEW, err='';
+  if (useRealData) { try { d=await api(`/api/admin/overview?days=${days}`); } catch(e){err=e.message;d=realOverview||MOCK_OVERVIEW;} }
+  const mrr_s=d.starter_count*29,mrr_g=d.growth_count*99,mrr_sc=d.scale_count*299;
+  const labels=dates(days);
+  const mrrSeries=rnd(d.mrr*.6,.3,.12,days);
+  document.getElementById('content').innerHTML=`
+    ${err?`<div class="err-banner">⚠ ${err}</div>`:''}
+    <div class="metrics-row">
+      <div class="mc"><div class="mc-label">MRR</div><div class="mc-val">${fmt(d.mrr)}</div><div class="mc-sub pos">recurring</div></div>
+      <div class="mc"><div class="mc-label">ARR</div><div class="mc-val">${fmt(d.arr)}</div><div class="mc-sub pos">annualised</div></div>
+      <div class="mc"><div class="mc-label">Starter MRR</div><div class="mc-val">${fmt(mrr_s)}</div><div class="mc-sub neu">${d.starter_count} subs</div></div>
+      <div class="mc"><div class="mc-label">Growth MRR</div><div class="mc-val">${fmt(mrr_g)}</div><div class="mc-sub pos">${d.growth_count} subs</div></div>
+      <div class="mc"><div class="mc-label">Scale MRR</div><div class="mc-val">${fmt(mrr_sc)}</div><div class="mc-sub pos">${d.scale_count} subs</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px">
+      <div class="card"><div class="card-head">📈 MRR Trend (estimated)</div><div class="card-body"><div class="chart-wrap"><canvas id="rev-main"></canvas></div></div></div>
+      <div class="card"><div class="card-head">🥧 Revenue Split</div><div class="card-body"><div class="chart-wrap"><canvas id="rev-split"></canvas></div></div></div>
+    </div>`;
+  const c1=document.getElementById('rev-main').getContext('2d');
+  charts.rev=new Chart(c1,{type:'line',data:{labels,datasets:[{label:'MRR',data:mrrSeries,borderColor:'#C8F04A',backgroundColor:grad(c1,'rgba(200,240,74,.2)'),fill:true,tension:.4,pointRadius:0}]},options:{...CB,scales:{...CB.scales,y:{...CB.scales.y,ticks:{...CB.scales.y.ticks,callback:v=>fmt(v)}}}}});
+  const c2=document.getElementById('rev-split').getContext('2d');
+  charts.split=new Chart(c2,{type:'doughnut',data:{labels:['Starter $29','Growth $99','Scale $299'],datasets:[{data:[mrr_s,mrr_g,mrr_sc],backgroundColor:['#8A8880','#C8F04A','#3AFFD4'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#555450',font:{family:'DM Mono',size:9},boxWidth:8,padding:8}},tooltip:CB.plugins.tooltip},cutout:'60%'}});
+}
+
+// ═══════════════════════════════════════════════════════════
+// REPORTS
+// ═══════════════════════════════════════════════════════════
+async function renderReports() {
+  let reports=[], total=0, err='';
+  if (useRealData) {
+    try { const d=await api('/api/admin/reports?limit=50'); reports=d.reports||[]; total=d.total||0; }
+    catch(e){err=e.message;}
+  }
+  if (!reports.length) {
+    reports=[{product_name:'Wireless Earbuds',product_category:'Electronics',growth_score:87,status:'completed',created_at:new Date().toISOString(),processing_time_ms:18420},{product_name:'Skincare Serum',product_category:'Beauty',growth_score:92,status:'completed',created_at:new Date(Date.now()-3600000).toISOString(),processing_time_ms:22100},{product_name:'Gym Shorts',product_category:'Fitness',growth_score:74,status:'completed',created_at:new Date(Date.now()-7200000).toISOString(),processing_time_ms:15600}];
+    total=reports.length;
+  }
+  document.getElementById('content').innerHTML=`
+    ${err?`<div class="err-banner">⚠ ${err}</div>`:''}
+    <div class="metrics-row" style="grid-template-columns:repeat(3,1fr)">
+      <div class="mc"><div class="mc-label">Total Reports</div><div class="mc-val">${fmtN(total)}</div><div class="mc-sub pos">all time</div></div>
+      <div class="mc"><div class="mc-label">Avg Score</div><div class="mc-val">${reports.length?Math.round(reports.reduce((a,r)=>a+(r.growth_score||0),0)/reports.length):0}</div><div class="mc-sub neu">growth score</div></div>
+      <div class="mc"><div class="mc-label">Avg Time</div><div class="mc-val">${reports.length?Math.round(reports.filter(r=>r.processing_time_ms).reduce((a,r)=>a+r.processing_time_ms,0)/reports.filter(r=>r.processing_time_ms).length/1000||0):0}s</div><div class="mc-sub neu">to generate</div></div>
+    </div>
+    <div class="card"><div class="card-head">📄 Recent Reports (${useRealData?'live':'placeholder'})</div>
+    <div style="overflow-x:auto"><table class="dt"><thead><tr><th>Product</th><th>Category</th><th>Score</th><th>Status</th><th>Time</th><th>Date</th></tr></thead>
+    <tbody>${reports.map(r=>{const sc=r.growth_score>=80?'var(--accent)':r.growth_score>=60?'var(--amber)':'var(--red)';return`<tr>
+      <td style="font-weight:600">${r.product_name||'—'}</td>
+      <td style="color:var(--text3);font-family:var(--fm);font-size:10px">${r.product_category||'—'}</td>
+      <td><span style="font-weight:800;font-family:var(--fm);color:${sc}">${r.growth_score||'—'}</span></td>
+      <td><span style="font-family:var(--fm);font-size:9px;padding:2px 7px;border-radius:100px;background:${r.status==='completed'?'rgba(200,240,74,.1)':'rgba(255,184,48,.1)'};color:${r.status==='completed'?'var(--accent)':'var(--amber)'}">${r.status||'—'}</span></td>
+      <td style="font-family:var(--fm);font-size:10px;color:var(--text3)">${r.processing_time_ms?Math.round(r.processing_time_ms/1000)+'s':'—'}</td>
+      <td style="font-family:var(--fm);font-size:10px;color:var(--text3)">${r.created_at?timeAgo(r.created_at):'—'}</td>
+    </tr>`;}).join('')}</tbody></table></div></div>`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// FUNNEL (always estimated — no funnel table in DB)
+// ═══════════════════════════════════════════════════════════
+async function renderFunnel() {
+  let overview=MOCK_OVERVIEW, err='';
+  if (useRealData){try{overview=await api(`/api/admin/overview?days=${days}`);}catch(e){err=e.message;overview=realOverview||MOCK_OVERVIEW;}}
+  const v=overview.total_users*8.2|0, s=overview.new_signups, a=Math.round(s*.6), p=overview.paying_users;
+  const steps=[{l:'Visited landing',n:v,cvr:null,c:'rgba(200,240,74,.55)'},{l:'Clicked sign up',n:Math.round(v*.24),cvr:'24%',c:'rgba(200,240,74,.5)'},{l:'Completed signup',n:s,cvr:((s/Math.round(v*.24))*100).toFixed(0)+'%',c:'rgba(200,240,74,.45)'},{l:'Ran first analysis',n:a,cvr:((a/Math.max(s,1))*100).toFixed(0)+'%',c:'rgba(200,240,74,.4)'},{l:'Became paying',n:p,cvr:((p/Math.max(a,1))*100).toFixed(0)+'%',c:'#C8F04A'}];
+  document.getElementById('content').innerHTML=`
+    ${err?`<div class="err-banner">⚠ ${err} — using ${realOverview?'last cached':'placeholder'} totals</div>`:''}
+    <div class="card"><div class="card-head">🔽 Conversion Funnel <span style="font-size:10px;font-family:var(--fm);color:var(--text3);font-weight:400">${useRealData?'real user counts, estimated steps':'placeholder'}</span></div>
+    <div class="card-body"><div class="funnel">${steps.map(s=>`<div class="funnel-row"><div class="funnel-lbl">${s.l}</div><div class="funnel-track"><div class="funnel-fill" style="width:${(s.n/Math.max(v,1)*100).toFixed(1)}%;background:${s.c}">${fmtN(s.n)}</div></div><div class="funnel-pct">${s.cvr||'—'}</div></div>`).join('')}</div></div></div>`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// RETENTION (always placeholder — requires cohort query)
+// ═══════════════════════════════════════════════════════════
+function renderRetention() {
+  const cohorts=['Oct 23','Nov 23','Dec 23','Jan 24','Feb 24','Mar 24'];
+  const months=['M0','M1','M2','M3','M4','M5','M6'];
+  const data=[[100,72,61,52,47,43,40],[100,70,58,50,45,41,38],[100,74,63,55,49,44],[100,76,65,57,52],[100,73,62,54],[100,75,64]];
+  function rc(v){if(!v&&v!==0)return'background:transparent';if(v===100)return'background:rgba(200,240,74,.3);color:#F0EEE6';if(v>=70)return'background:rgba(200,240,74,.22);color:var(--accent)';if(v>=50)return'background:rgba(200,240,74,.1);color:#8A8880';if(v>=30)return'background:rgba(255,184,48,.07);color:var(--amber)';return'background:rgba(255,92,58,.07);color:var(--red)';}
+  document.getElementById('content').innerHTML=`
+    <div style="background:rgba(255,184,48,.06);border:1px solid rgba(255,184,48,.15);border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:11px;font-family:var(--fm);color:var(--amber)">
+      ℹ Retention cohorts require a cohort analysis query on your Supabase data — showing realistic placeholder until you have enough historical data.
+    </div>
+    <div class="metrics-row" style="grid-template-columns:repeat(4,1fr)">
+      <div class="mc"><div class="mc-label">M1 Retention</div><div class="mc-val">72%</div><div class="mc-sub pos">placeholder</div></div>
+      <div class="mc"><div class="mc-label">M3 Retention</div><div class="mc-val">52%</div><div class="mc-sub neu">placeholder</div></div>
+      <div class="mc"><div class="mc-label">M6 Retention</div><div class="mc-val">40%</div><div class="mc-sub neu">placeholder</div></div>
+      <div class="mc"><div class="mc-label">Avg LTV</div><div class="mc-val">19mo</div><div class="mc-sub pos">at 5% churn</div></div>
+    </div>
+    <div class="card"><div class="card-head">🔄 Cohort Retention Table</div>
+    <div class="card-body" style="overflow-x:auto"><table class="cohort-table"><tr><th>Cohort</th>${months.map(m=>`<th>${m}</th>`).join('')}</tr>
+    ${cohorts.map((c,i)=>`<tr><td>${c}</td>${months.map((_,j)=>{const v=data[i]?.[j];return`<td style="${rc(v)};padding:5px 6px;font-weight:${v===100?700:400};border-radius:3px">${v!==undefined?v+'%':''}</td>`;}).join('')}</tr>`).join('')}</table></div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px">
+      <div class="card"><div class="card-head">📈 Retention Curves</div><div class="card-body"><div class="chart-wrap"><canvas id="ret-c"></canvas></div></div></div>
+      <div class="card"><div class="card-head">💡 Churn Reasons (survey)</div><div class="card-body"><div class="chart-wrap"><canvas id="churn-c"></canvas></div></div></div>
+    </div>`;
+  const c1=document.getElementById('ret-c').getContext('2d');
+  charts.ret=new Chart(c1,{type:'line',data:{labels:months,datasets:cohorts.map((c,i)=>({label:c,data:data[i],borderColor:`rgba(200,240,74,${.3+i*.12})`,fill:false,tension:.3,pointRadius:2,borderWidth:1.5}))},options:{...CB,plugins:{...CB.plugins,legend:{display:true,labels:{color:'#555450',font:{family:'DM Mono',size:9},boxWidth:8,padding:8}}},scales:{...CB.scales,y:{...CB.scales.y,ticks:{...CB.scales.y.ticks,callback:v=>v+'%'}}}}});
+  const c2=document.getElementById('churn-c').getContext('2d');
+  charts.churn=new Chart(c2,{type:'bar',data:{labels:['Too expensive','Not using','Missing feature','Found alt','Other'],datasets:[{data:[34,28,18,13,7],backgroundColor:['#FF5C3Aaa','#FFB83088','#7B61FF88','#3AFFD488','#55545088'],borderRadius:3}]},options:{...CB,indexAxis:'y',scales:{x:{...CB.scales.x,ticks:{...CB.scales.x.ticks,callback:v=>v+'%'}},y:CB.scales.y}}});
+}
+
+// ═══════════════════════════════════════════════════════════
+// VIRAL SCRAPER
+// ═══════════════════════════════════════════════════════════
+const VIRAL_FALLBACK=[{platform:'Reddit',icon:'🔴',title:'"I replaced my $3k/month agency with a $99 AI tool"',source:'r/ecommerce · 14.2k upvotes',likes:'14.2k upvotes',comments:'892 comments',shares:'3.1k saves',score:96,hook:'Agency replacement story',format:'Screenshot post',why:'Agency cost pain drives massive engagement'},{platform:'TikTok',icon:'🎵',title:'"POV: AI analyzes your competitor in 60 seconds"',source:'@dtc_hacks · 127k likes',likes:'127k likes',comments:'3.2k comments',shares:'18.4k shares',score:94,hook:'60-second result reveal',format:'Screen record',why:'Speed + competitor gap = shareable'},{platform:'Twitter/X',icon:'🐦',title:'"I analyzed 50 bestsellers with AI — here\'s what they share 🧵"',source:'@ecomfounder',likes:'2.1k likes',comments:'284 replies',shares:'8.9k retweets',score:91,hook:'Pattern reveal',format:'Thread + screenshots',why:'Data threads get bookmarked'},{platform:'LinkedIn',icon:'💼',title:'"We cut market research costs 94%. Here\'s how."',source:'12k followers',likes:'3.4k reactions',comments:'287 comments',shares:'1.8k reposts',score:87,hook:'Specific % reduction',format:'Carousel',why:'B2B decision-makers love proof'}];
+
+async function renderViral() {
+  document.getElementById('content').innerHTML=`
+    <div style="background:rgba(200,240,74,.04);border:1px solid rgba(200,240,74,.15);border-radius:9px;padding:18px;margin-bottom:20px;font-size:13px;color:var(--text2)"><strong style="color:var(--accent)">⚡ Viral Content Intelligence</strong> — Find hooks, formats, and angles proven to convert in your niche. Click "Scrape" to generate AI content ideas.</div>
+    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
+      <input class="search-box" id="viral-q" placeholder="Search: 'DTC marketing' or 'Amazon FBA' or 'product analysis'" value="product analysis DTC"/>
+      ${['All','Reddit','TikTok','Twitter/X','YouTube','LinkedIn'].map((p,i)=>`<button class="filter-btn${i===0?' act':''}" onclick="viralFilter('${p}',this)">${p}</button>`).join('')}
+      <button onclick="viralScrape()" id="vscrape" class="btn-sm btn-accent">⚡ Scrape AI Ideas</button>
+    </div>
+    <div class="loading-bar-wrap" id="vbar"><div class="loading-bar-fill" id="vfill"></div></div>
+    <div id="viral-res"></div>`;
+  renderViralCards(VIRAL_FALLBACK);
+}
+
+function renderViralCards(items) {
+  const el=document.getElementById('viral-res');
+  if(!el) return;
+  if(!items?.length){el.innerHTML='<div style="padding:40px;text-align:center;color:var(--text3);font-family:var(--fm)">No results</div>';return;}
+  el.innerHTML=items.map(v=>`<div class="vcard"><div class="vcard-head"><div class="vicon">${v.icon}</div><div style="flex:1"><div class="vtitle">${v.title}</div><div class="vsrc">${v.source}</div><div style="font-size:11px;font-family:var(--fm);color:var(--text3);margin-top:4px">${v.likes||''} · ${v.comments||''} · ${v.shares||''}</div></div><div class="vscore">${v.score}</div></div><div class="vtags"><span class="vtag vt1">🎣 ${v.hook}</span><span class="vtag vt2">📐 ${v.format}</span><span class="vtag vt3">💡 ${v.why}</span></div></div>`).join('');
+}
+
+let viralPlatform='All';
+function viralFilter(p,btn){viralPlatform=p;document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('act'));btn.classList.add('act');renderViralCards(viralPlatform==='All'?VIRAL_FALLBACK:VIRAL_FALLBACK.filter(v=>v.platform===viralPlatform));}
+
+async function viralScrape() {
+  const q=document.getElementById('viral-q')?.value||'product analysis';
+  const btn=document.getElementById('vscrape');
+  const fill=document.getElementById('vfill');
+  document.getElementById('vbar').style.display='block';
+  btn.disabled=true; btn.textContent='⟳ Scraping…';
+  let prog=0; const iv=setInterval(()=>{prog=Math.min(prog+Math.random()*10,92);fill.style.width=prog+'%';},200);
+  try {
+    const data=await api(`/api/viral/scrape?q=${encodeURIComponent(q)}&platform=${viralPlatform.toLowerCase()}`);
+    clearInterval(iv); fill.style.width='100%';
+    renderViralCards([...(data.results||[]),...VIRAL_FALLBACK].slice(0,10));
+  } catch(e) {
+    clearInterval(iv);
+    document.getElementById('vbar').style.display='none';
+    alert('Scraper error: '+e.message+'\n\nCheck ADMIN_SECRET in admin.html matches your .env');
+  }
+  setTimeout(()=>{document.getElementById('vbar').style.display='none';fill.style.width='0';},500);
+  btn.disabled=false; btn.innerHTML='⚡ Scrape AI Ideas';
+}
+
+// ═══════════════════════════════════════════════════════════
+// LIVE EVENTS
+// ═══════════════════════════════════════════════════════════
+async function renderEvents() {
+  document.getElementById('content').innerHTML=`
+    <div class="metrics-row" style="grid-template-columns:repeat(5,1fr)">
+      <div class="mc"><div class="mc-label">Events (${days}d)</div><div class="mc-val" id="ev-total">—</div><div class="mc-sub neu">from DB</div></div>
+      <div class="mc"><div class="mc-label">Signups</div><div class="mc-val" id="ev-sig">—</div></div>
+      <div class="mc"><div class="mc-label">Analyses</div><div class="mc-val" id="ev-ana">—</div></div>
+      <div class="mc"><div class="mc-label">Upgrades</div><div class="mc-val" id="ev-upg">—</div><div class="mc-sub pos">revenue</div></div>
+      <div class="mc"><div class="mc-label">Churns</div><div class="mc-val" id="ev-chr">—</div><div class="mc-sub neg">watch</div></div>
+    </div>
+    <div class="card"><div class="card-head">📡 Event Stream <span style="font-size:10px;font-family:var(--fm);color:${useRealData?'var(--accent)':'var(--amber)'};font-weight:400">${useRealData?'live from Supabase':'simulated'}</span></div>
+    <div style="max-height:500px;overflow-y:auto"><table class="dt"><thead><tr><th>Time</th><th>Event</th><th>User</th><th>Data</th></tr></thead><tbody id="ev-tbody"></tbody></table></div></div>`;
+
+  if (useRealData) {
+    try {
+      const data=await api(`/api/admin/events?limit=100`);
+      const events=data.events||[];
+      // Count metrics
+      const counts={signup:0,analyze:0,upgrade:0,churn:0};
+      events.forEach(e=>{if(counts[e.event_type]!==undefined)counts[e.event_type]++;});
+      document.getElementById('ev-total').textContent=fmtN(events.length);
+      document.getElementById('ev-sig').textContent=counts.signup;
+      document.getElementById('ev-ana').textContent=counts.analyze;
+      document.getElementById('ev-upg').textContent=counts.upgrade;
+      document.getElementById('ev-chr').textContent=counts.churn;
+      // Render table
+      document.getElementById('ev-tbody').innerHTML=events.map(e=>`<tr>
+        <td style="font-family:var(--fm);font-size:10px;color:var(--text3)">${new Date(e.created_at).toLocaleString()}</td>
+        <td><span class="evt-pill ep-${e.event_type||'signup'}">${(e.event_type||'event').toUpperCase()}</span></td>
+        <td style="font-family:var(--fm);font-size:11px;color:var(--text2)">${e.user_id?e.user_id.slice(0,12)+'…':'anon'}</td>
+        <td style="font-size:11px;color:var(--text3)">${e.event_data?JSON.stringify(e.event_data).slice(0,60):'—'}</td>
+      </tr>`).join('');
+      return;
+    } catch(e) {
+      document.getElementById('ev-tbody').innerHTML=`<tr><td colspan="4" style="color:var(--red);font-family:var(--fm);font-size:11px;padding:16px">Error: ${e.message}</td></tr>`;
+    }
+  }
+
+  // PLACEHOLDER — simulated live stream
+  const TYPES=['signup','analyze','upgrade','analyze','analyze','signin','churn','analyze'];
+  const USERS=['maya@glowlab.co','jordan@drift.co','alex@trailpro.com','sam@beanflow.com','anon-7f3d'];
+  const PRODS=['Wireless Headphones','Skincare Serum','Coffee Grinder','Running Vest'];
+  let cnt={signup:2,analyze:14,upgrade:1,churn:0};
+  function addEv(){
+    const t=TYPES[Math.floor(Math.random()*TYPES.length)];
+    const u=USERS[Math.floor(Math.random()*USERS.length)];
+    const p=PRODS[Math.floor(Math.random()*PRODS.length)];
+    if(cnt[t]!==undefined)cnt[t]++;
+    document.getElementById('ev-total').textContent=fmtN(Object.values(cnt).reduce((a,b)=>a+b,0));
+    document.getElementById('ev-sig').textContent=cnt.signup;
+    document.getElementById('ev-ana').textContent=cnt.analyze;
+    document.getElementById('ev-upg').textContent=cnt.upgrade;
+    document.getElementById('ev-chr').textContent=cnt.churn;
+    const row=document.createElement('tr');
+    row.innerHTML=`<td style="font-family:var(--fm);font-size:10px;color:var(--text3)">${new Date().toLocaleTimeString()}</td><td><span class="evt-pill ep-${t}">${t.toUpperCase()}</span></td><td style="font-family:var(--fm);font-size:11px;color:var(--text2)">${u}</td><td style="font-size:11px;color:var(--text3)">${t==='analyze'?`product: ${p}`:t==='upgrade'?'→ Growth Plan':'new event'}</td>`;
+    const tbody=document.getElementById('ev-tbody');
+    if(tbody){tbody.insertBefore(row,tbody.firstChild);if(tbody.children.length>50)tbody.removeChild(tbody.lastChild);}
+  }
+  for(let i=0;i<8;i++) addEv();
+  liveInterval=setInterval(addEv,1500+Math.random()*500);
+}
+
+// ═══════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════
+function timeAgo(ts) {
+  const s=Math.round((Date.now()-new Date(ts))/1000);
+  if(s<60) return s+'s ago';
+  if(s<3600) return Math.round(s/60)+'m ago';
+  if(s<86400) return Math.round(s/3600)+'h ago';
+  return Math.round(s/86400)+'d ago';
+}
+
+// ═══════════════════════════════════════════════════════════
+// BOOT
+// ═══════════════════════════════════════════════════════════
+showTab('overview', document.querySelector('.si.act'));
+</script>
+</body>
+</html>

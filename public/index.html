@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Chamber — AI Product Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0A0A08;--bg2:#111110;--bg3:#1A1A18;--bg4:#222220;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --text:#F0EEE6;--text2:#8A8880;--text3:#555450;
+  --accent:#C8F04A;--accent2:#A8D030;
+  --adim:rgba(200,240,74,0.10);--adim2:rgba(200,240,74,0.05);
+  --red:#FF5C3A;--teal:#3AFFD4;--amber:#FFB830;
+  --fd:'Syne',sans-serif;--fm:'DM Mono',monospace;--fs:'Instrument Serif',serif;
+  --r:12px;--r2:8px;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--fd);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:2px}
+
+/* NAV */
+.nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:18px 48px;display:flex;align-items:center;justify-content:space-between;transition:all .4s}
+.nav.sc{background:rgba(10,10,8,0.9);backdrop-filter:blur(24px);border-bottom:1px solid var(--border)}
+.logo{font-size:18px;font-weight:800;letter-spacing:-.5px;display:flex;align-items:center;gap:8px;cursor:pointer}
+.logo-mark{width:28px;height:28px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center}
+.logo em{color:var(--accent);font-style:normal}
+.nav-links{display:flex;gap:32px}
+.nl{font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;transition:color .2s;text-decoration:none}
+.nl:hover{color:var(--text)}
+.nav-r{display:flex;gap:10px;align-items:center}
+.btn{font-family:var(--fd);font-size:13px;font-weight:600;padding:9px 20px;border-radius:var(--r2);border:none;cursor:pointer;transition:all .2s;letter-spacing:.02em;display:inline-flex;align-items:center;gap:8px}
+.btn-g{background:transparent;color:var(--text2);border:1px solid var(--border2)}
+.btn-g:hover{color:var(--text);border-color:rgba(255,255,255,.22);background:var(--bg3)}
+.btn-p{background:var(--accent);color:#0A0A08}
+.btn-p:hover{background:var(--accent2);transform:translateY(-1px);box-shadow:0 8px 24px rgba(200,240,74,.25)}
+.btn-o{background:transparent;color:var(--text);border:1px solid var(--border2)}
+.btn-o:hover{border-color:var(--accent);color:var(--accent);background:var(--adim2)}
+.btn-lg{font-size:15px;padding:14px 32px;border-radius:var(--r)}
+
+/* HERO */
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:100px 48px 80px;position:relative;overflow:hidden;text-align:center}
+.hero-grid{position:absolute;inset:0;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:60px 60px;mask-image:radial-gradient(ellipse 80% 60% at 50% 50%,black 30%,transparent 100%);-webkit-mask-image:radial-gradient(ellipse 80% 60% at 50% 50%,black 30%,transparent 100%)}
+.hero-glow{position:absolute;top:10%;left:50%;transform:translateX(-50%);width:800px;height:600px;background:radial-gradient(ellipse,rgba(200,240,74,.07) 0%,transparent 70%);pointer-events:none}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border2);border-radius:100px;padding:7px 18px 7px 10px;font-size:12px;font-family:var(--fm);color:var(--text2);margin-bottom:36px;cursor:pointer;transition:border-color .2s;position:relative;z-index:1}
+.hero-badge:hover{border-color:var(--accent)}
+.bdot{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent);animation:pdot 2s ease-in-out infinite;flex-shrink:0}
+@keyframes pdot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.6)}}
+
+.hero-title{font-size:clamp(52px,8.5vw,100px);font-weight:800;line-height:.92;letter-spacing:-4px;max-width:980px;margin-bottom:28px;position:relative;z-index:1}
+.hero-title .static{color:var(--text)}
+.animated-wrap{position:relative;display:inline-block;height:1.1em;overflow:hidden;vertical-align:bottom;min-width:300px}
+.animated-word{position:absolute;left:0;right:0;font-family:var(--fs);font-style:italic;font-weight:400;color:var(--accent);letter-spacing:-2px}
+.hero-sub{font-size:19px;color:var(--text2);max-width:560px;line-height:1.65;margin-bottom:52px;font-weight:400;position:relative;z-index:1}
+.hero-actions{display:flex;gap:14px;margin-bottom:80px;flex-wrap:wrap;justify-content:center;position:relative;z-index:1}
+.hero-stats{display:flex;gap:56px;flex-wrap:wrap;justify-content:center;position:relative;z-index:1}
+.stat-n{font-size:30px;font-weight:800;letter-spacing:-1px}
+.stat-n em{color:var(--accent);font-style:normal}
+.stat-l{font-size:12px;color:var(--text3);font-family:var(--fm);margin-top:3px}
+
+@keyframes wordIn{from{opacity:0;transform:translateY(-60px)}to{opacity:1;transform:translateY(0)}}
+@keyframes wordOut{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(60px)}}
+.word-in{animation:wordIn .5s cubic-bezier(.34,1.56,.64,1) forwards}
+.word-out{animation:wordOut .4s ease forwards}
+.word-still{opacity:1;transform:translateY(0)}
+
+/* TICKER */
+.ticker{border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:14px 0;overflow:hidden;white-space:nowrap;background:var(--bg2)}
+.ticker-in{display:inline-flex;animation:tick 40s linear infinite}
+.ti{display:inline-flex;align-items:center;gap:8px;padding:0 32px;font-size:12px;font-family:var(--fm);color:var(--text3)}
+.ti em{color:var(--accent);font-style:normal}
+@keyframes tick{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+
+/* ORBITAL */
+.orbital-section{position:relative;overflow:hidden;background:var(--bg);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.orbital-container{width:100%;height:680px;display:flex;align-items:center;justify-content:center;position:relative;cursor:default;user-select:none}
+.orbital-bg-glow{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:500px;height:500px;background:radial-gradient(ellipse,rgba(200,240,74,.04) 0%,transparent 70%);pointer-events:none}
+.orbit-ring{position:absolute;width:420px;height:420px;border-radius:50%;border:1px solid rgba(255,255,255,0.07);pointer-events:none}
+.orbit-ring-2{position:absolute;width:520px;height:520px;border-radius:50%;border:1px dashed rgba(255,255,255,0.03);pointer-events:none}
+.orbital-center{position:absolute;width:72px;height:72px;border-radius:50%;background:conic-gradient(from 0deg,#C8F04A,#3AFFD4,#7B61FF,#C8F04A);display:flex;align-items:center;justify-content:center;z-index:10;animation:spin-slow 12s linear infinite}
+.orbital-center::before{content:'';position:absolute;width:88px;height:88px;border-radius:50%;border:1px solid rgba(200,240,74,.2);animation:ping-slow 2s ease-out infinite}
+.orbital-center::after{content:'';position:absolute;width:104px;height:104px;border-radius:50%;border:1px solid rgba(200,240,74,.1);animation:ping-slow 2s ease-out infinite .5s}
+.orbital-center-inner{width:52px;height:52px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:20px}
+@keyframes spin-slow{to{transform:rotate(360deg)}}
+@keyframes ping-slow{0%{opacity:.7;transform:scale(1)}100%{opacity:0;transform:scale(1.4)}}
+
+.orb-node{position:absolute;transform-origin:center;cursor:pointer;transition:opacity .6s cubic-bezier(.4,0,.2,1)}
+.orb-node-circle{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;border:2px solid rgba(255,255,255,.15);background:var(--bg2);transition:all .3s;position:relative}
+.orb-node:hover .orb-node-circle{border-color:var(--accent);background:var(--adim);transform:scale(1.15)}
+.orb-node.active .orb-node-circle{border-color:var(--accent);background:var(--accent);transform:scale(1.25);box-shadow:0 0 24px rgba(200,240,74,.4)}
+.orb-node.related .orb-node-circle{border-color:var(--teal);animation:pulse-ring .8s ease-in-out infinite}
+@keyframes pulse-ring{0%,100%{box-shadow:0 0 0 0 rgba(58,255,212,.3)}50%{box-shadow:0 0 0 8px rgba(58,255,212,0)}}
+.orb-node-label{position:absolute;top:56px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:11px;font-weight:600;font-family:var(--fm);color:var(--text2);letter-spacing:.06em;transition:color .3s;text-align:center}
+.orb-node.active .orb-node-label{color:var(--accent)}
+
+.orb-popup{position:absolute;width:260px;background:rgba(10,10,8,.96);border:1px solid rgba(255,255,255,.15);border-radius:var(--r);padding:18px;box-shadow:0 24px 60px rgba(0,0,0,.8);z-index:200;backdrop-filter:blur(20px);top:-20px}
+.orb-popup::before{content:'';position:absolute;top:-8px;left:50%;transform:translateX(-50%);width:1px;height:8px;background:rgba(255,255,255,.3)}
+.orb-popup-title{font-size:14px;font-weight:700;margin-bottom:5px}
+.orb-popup-date{font-size:10px;font-family:var(--fm);color:var(--text3);margin-bottom:10px}
+.orb-popup-body{font-size:12px;color:var(--text2);line-height:1.65;margin-bottom:12px}
+.orb-popup-bar{height:4px;background:var(--bg4);border-radius:2px;overflow:hidden;margin-bottom:4px}
+.orb-popup-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--teal),var(--accent))}
+.orb-popup-meta{font-size:10px;font-family:var(--fm);color:var(--text3);display:flex;justify-content:space-between;margin-bottom:12px}
+.orb-status{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;font-family:var(--fm);padding:3px 9px;border-radius:100px;letter-spacing:.04em}
+.orb-st-done{background:var(--adim);color:var(--accent)}
+.orb-st-prog{background:rgba(58,255,212,.1);color:var(--teal)}
+.orb-st-pend{background:rgba(255,255,255,.05);color:var(--text3)}
+.orb-related-row{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.07)}
+.orb-rel-btn{font-size:10px;font-family:var(--fm);font-weight:600;padding:3px 8px;border-radius:4px;border:1px solid rgba(255,255,255,.12);background:transparent;color:var(--text2);cursor:pointer;transition:all .15s}
+.orb-rel-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--adim)}
+.popup-header-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.orb-related-label{font-size:10px;font-family:var(--fm);color:var(--text3);margin-bottom:6px;display:block}
+
+/* SECTIONS */
+.sec{padding:100px 48px;max-width:1240px;margin:0 auto}
+.sec-lbl{font-size:11px;font-family:var(--fm);color:var(--accent);letter-spacing:.12em;text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.sec-lbl::before{content:'';width:20px;height:1px;background:var(--accent)}
+.sec-t{font-size:clamp(32px,5vw,58px);font-weight:800;letter-spacing:-2px;line-height:1.02;margin-bottom:14px}
+.sec-t em{font-family:var(--fs);font-style:italic;font-weight:400;color:var(--text2)}
+.sec-s{font-size:16px;color:var(--text2);max-width:500px;line-height:1.65}
+
+/* FEATURES */
+.fg{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-top:60px}
+.fc{background:var(--bg);padding:36px 32px;transition:background .2s}
+.fc:hover{background:var(--bg2)}
+.fi{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;font-size:20px}
+.fn{font-size:16px;font-weight:700;margin-bottom:8px;letter-spacing:-.3px}
+.fd2{font-size:14px;color:var(--text2);line-height:1.65}
+
+/* PRICING */
+.pg{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;margin-top:60px}
+.pc{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:36px 32px;position:relative;transition:border-color .25s}
+.pc:hover{border-color:var(--border2)}
+.pc.feat{border-color:var(--accent);background:linear-gradient(160deg,rgba(200,240,74,.05) 0%,var(--bg2) 100%)}
+.fbadge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--accent);color:#0A0A08;font-size:11px;font-weight:700;padding:4px 16px;border-radius:100px;white-space:nowrap;letter-spacing:.04em}
+.pn{font-size:12px;font-weight:600;color:var(--text2);margin-bottom:8px;letter-spacing:.07em;text-transform:uppercase;font-family:var(--fm)}
+.pp{font-size:48px;font-weight:800;letter-spacing:-2px;margin-bottom:5px}
+.pp sup{font-size:20px;font-weight:600;letter-spacing:0;vertical-align:super;color:var(--text2)}
+.pp sub{font-size:14px;font-weight:400;letter-spacing:0;color:var(--text2)}
+.pd{font-size:14px;color:var(--text2);margin-bottom:28px;line-height:1.55}
+.pfl{list-style:none;margin-bottom:32px;display:flex;flex-direction:column;gap:10px}
+.pfi{font-size:14px;color:var(--text2);display:flex;align-items:flex-start;gap:9px}
+.pfi::before{content:'✓';color:var(--accent);font-weight:700;flex-shrink:0}
+.pfi.muted::before{content:'—';color:var(--text3)}
+.pfi.muted{color:var(--text3)}
+
+/* TESTIMONIALS */
+.tg{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;margin-top:60px}
+.tc{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:30px}
+.ts-stars{color:var(--amber);font-size:14px;letter-spacing:2px;margin-bottom:16px}
+.ts-text{font-size:15px;line-height:1.75;font-family:var(--fs);font-style:italic;margin-bottom:20px}
+.ts-author{display:flex;align-items:center;gap:10px}
+.ts-av{width:36px;height:36px;border-radius:50%;background:var(--bg4);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:16px}
+.ts-name{font-size:13px;font-weight:700}
+.ts-role{font-size:11px;color:var(--text3);font-family:var(--fm)}
+
+/* MARKETING ANGLES */
+.angles-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:40px}
+.angle-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:28px;transition:border-color .2s;position:relative;overflow:hidden}
+.angle-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),transparent)}
+.angle-card:hover{border-color:var(--border2)}
+.angle-num{font-size:10px;font-family:var(--fm);color:var(--accent);letter-spacing:.1em;margin-bottom:10px}
+.angle-title{font-size:16px;font-weight:700;letter-spacing:-.3px;margin-bottom:8px}
+.angle-desc{font-size:13px;color:var(--text2);line-height:1.65}
+
+/* TARGET */
+.target-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:48px}
+.target-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:32px}
+.target-avatar{font-size:36px;margin-bottom:16px}
+.target-title{font-size:18px;font-weight:700;margin-bottom:4px;letter-spacing:-.3px}
+.target-subtitle{font-size:12px;font-family:var(--fm);color:var(--accent);margin-bottom:16px;letter-spacing:.04em}
+.target-desc{font-size:14px;color:var(--text2);line-height:1.7;margin-bottom:16px}
+.target-pain{display:flex;flex-direction:column;gap:7px}
+.target-pain-item{font-size:13px;color:var(--text2);display:flex;gap:8px;align-items:flex-start}
+.target-pain-item::before{content:'→';color:var(--red);flex-shrink:0;font-weight:700}
+
+/* SAMPLE REPORT */
+.sample-report{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);overflow:hidden;margin-top:60px}
+.sr-head{padding:24px 32px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.sr-body{display:grid;grid-template-columns:1fr 1fr 1fr}
+.sr-col{padding:28px 32px;border-right:1px solid var(--border)}
+.sr-col:last-child{border-right:none}
+.sr-col-title{font-size:10px;font-family:var(--fm);color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:14px}
+.sr-angle{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:11px 13px;margin-bottom:8px;font-size:12px;font-weight:500;display:flex;align-items:center;gap:7px}
+.sr-angle::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--accent);flex-shrink:0}
+.sr-inf{display:flex;align-items:center;gap:9px;margin-bottom:11px}
+.sr-inf-av{width:30px;height:30px;border-radius:50%;background:var(--bg4);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:13px}
+.sr-sent-bar{margin-bottom:10px}
+.sr-sent-row{display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px}
+.sr-bar{height:5px;background:var(--bg4);border-radius:3px;overflow:hidden}
+
+/* 10K PLAN */
+.plan-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:48px}
+.plan-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:24px;position:relative}
+.plan-phase{font-size:10px;font-family:var(--fm);color:var(--accent);letter-spacing:.1em;margin-bottom:12px}
+.plan-num{font-size:40px;font-weight:800;letter-spacing:-2px;color:rgba(255,255,255,.06);position:absolute;top:16px;right:20px}
+.plan-title{font-size:15px;font-weight:700;margin-bottom:8px;letter-spacing:-.3px}
+.plan-desc{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:16px}
+.plan-items{display:flex;flex-direction:column;gap:6px}
+.plan-item{font-size:12px;color:var(--text3);display:flex;gap:7px;align-items:flex-start;font-family:var(--fm)}
+.plan-item::before{content:'✓';color:var(--accent);flex-shrink:0}
+.plan-target{margin-top:16px;padding-top:14px;border-top:1px solid var(--border);font-size:12px;font-family:var(--fm)}
+.plan-target span{color:var(--accent);font-weight:700}
+
+/* CTA */
+.cta-section{text-align:center;padding:100px 48px;border-top:1px solid var(--border);position:relative;overflow:hidden}
+.cta-glow{position:absolute;bottom:-100px;left:50%;transform:translateX(-50%);width:600px;height:400px;background:radial-gradient(ellipse,rgba(200,240,74,.06) 0%,transparent 70%);pointer-events:none}
+
+/* FOOTER */
+.foot{border-top:1px solid var(--border);padding:60px 48px 40px;max-width:1240px;margin:0 auto}
+.fg3{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:40px;margin-bottom:44px}
+.fbl{font-size:13px;color:var(--text2);line-height:1.75;margin-top:10px;max-width:260px}
+.fct{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);font-family:var(--fm);margin-bottom:16px}
+.fls{display:flex;flex-direction:column;gap:10px}
+.fl{font-size:14px;color:var(--text2);cursor:pointer;transition:color .2s}
+.fl:hover{color:var(--text)}
+.fbot{display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border);padding-top:24px;font-size:12px;color:var(--text3);font-family:var(--fm)}
+
+.sdiv{border-top:1px solid var(--border);border-bottom:1px solid var(--border);background:var(--bg2)}
+
+/* ANIMATIONS */
+@keyframes fadeUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+.au{animation:fadeUp .6s ease both}
+.au1{animation-delay:.1s}.au2{animation-delay:.2s}.au3{animation-delay:.3s}.au4{animation-delay:.45s}.au5{animation-delay:.6s}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav" id="mainNav">
+  <div class="logo">
+    <div class="logo-mark">
+      <svg viewBox="0 0 16 16" fill="none" width="14" height="14"><polygon points="8,1 15,5 15,11 8,15 1,11 1,5" fill="#0A0A08"/></svg>
+    </div>
+    Chamber<em>.</em>
+  </div>
+  <div class="nav-links">
+    <span class="nl" onclick="scrollTo('features')">Features</span>
+    <span class="nl" onclick="scrollTo('how')">How it works</span>
+    <span class="nl" onclick="scrollTo('pricing')">Pricing</span>
+    <span class="nl" onclick="scrollTo('customers')">Customers</span>
+  </div>
+  <div class="nav-r">
+    <button class="btn btn-g">Sign in</button>
+    <button class="btn btn-p">Start free →</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-glow"></div>
+  <div class="hero-badge au">
+    <div class="bdot"></div>
+    <span>AI-powered product intelligence · live</span>
+    <span style="color:var(--accent);margin-left:4px">→</span>
+  </div>
+  <h1 class="hero-title au au1">
+    <span class="static">Product research</span><br>
+    <span class="static">that is </span><span class="animated-wrap"><span class="animated-word word-still" id="animWord">powerful</span></span>
+  </h1>
+  <p class="hero-sub au au2">Drop in any product. Get marketing angles, competitor gaps, Reddit sentiment, micro-influencer matches, and a full growth playbook in 60 seconds.</p>
+  <div class="hero-actions au au3">
+    <button class="btn btn-p btn-lg">
+      Analyze your first product free
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+    </button>
+    <button class="btn btn-o btn-lg" onclick="scrollTo('how')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      Watch a demo
+    </button>
+  </div>
+  <div class="hero-stats au au4">
+    <div style="text-align:center"><div class="stat-n"><em>12k+</em></div><div class="stat-l">products analyzed</div></div>
+    <div style="text-align:center"><div class="stat-n"><em>94%</em></div><div class="stat-l">accuracy score</div></div>
+    <div style="text-align:center"><div class="stat-n"><em>$2k</em></div><div class="stat-l">saved vs agency</div></div>
+    <div style="text-align:center"><div class="stat-n"><em>60s</em></div><div class="stat-l">turnaround</div></div>
+  </div>
+</section>
+
+<!-- TICKER -->
+<div class="ticker">
+  <div class="ticker-in" id="tickerInner"></div>
+</div>
+
+<!-- TARGET CUSTOMERS -->
+<div id="features">
+  <div class="sec">
+    <div class="sec-lbl">Who it's for</div>
+    <div class="sec-t">Your exact<br><em>target customer</em></div>
+    <p class="sec-s">Chamber is built for the operators who move products — not the agencies that charge them to do it.</p>
+    <div class="target-grid">
+      <div class="target-card">
+        <div class="target-avatar">🛒</div>
+        <div class="target-title">DTC Founders</div>
+        <div class="target-subtitle">PRIMARY TARGET · HIGHEST VALUE</div>
+        <div class="target-desc">Bootstrapped and VC-backed DTC brand owners selling on Shopify, their own site, or both. Revenue $100k–$5M ARR. Currently paying agencies $2–5k/mo for research that takes weeks.</div>
+        <div class="target-pain">
+          <div class="target-pain-item">'We don't know which angle to test next'</div>
+          <div class="target-pain-item">'Our competitor research takes 3 days'</div>
+          <div class="target-pain-item">'We can't find the right influencers without a broker'</div>
+          <div class="target-pain-item">'Reddit mentions us and we don't even know'</div>
+        </div>
+      </div>
+      <div class="target-card">
+        <div class="target-avatar">📦</div>
+        <div class="target-title">Amazon FBA Sellers</div>
+        <div class="target-subtitle">HIGH VOLUME · PRICE SENSITIVE</div>
+        <div class="target-desc">Amazon sellers doing $50k–$2M/year who obsess over competitor listings and BSR ranks. They use tools like Jungle Scout but miss the marketing intelligence layer.</div>
+        <div class="target-pain">
+          <div class="target-pain-item">'I know what's selling but not WHY people buy it'</div>
+          <div class="target-pain-item">'Competitor analysis tools show data, not strategy'</div>
+          <div class="target-pain-item">'I can't find UGC creators without paying brokers'</div>
+          <div class="target-pain-item">'I don't know if my niche is getting saturated'</div>
+        </div>
+      </div>
+      <div class="target-card">
+        <div class="target-avatar">🏢</div>
+        <div class="target-title">E-commerce Agencies</div>
+        <div class="target-subtitle">MULTIPLIER · RESELLER POTENTIAL</div>
+        <div class="target-desc">Growth agencies managing 5–30 DTC brand clients. They do competitor analysis manually for every client and would pay for a tool that makes their team 10x faster.</div>
+        <div class="target-pain">
+          <div class="target-pain-item">'Client research takes our team 2 days per brief'</div>
+          <div class="target-pain-item">'We charge for strategy but build it manually'</div>
+          <div class="target-pain-item">'Finding influencers for every client is a bottleneck'</div>
+          <div class="target-pain-item">'We need a differentiated research offering'</div>
+        </div>
+      </div>
+      <div class="target-card">
+        <div class="target-avatar">🚀</div>
+        <div class="target-title">Product Launchers</div>
+        <div class="target-subtitle">PRE-REVENUE · EARLY ADOPTERS</div>
+        <div class="target-desc">Entrepreneurs validating their next product before investing in inventory. They need market intelligence before they spend money, not after.</div>
+        <div class="target-pain">
+          <div class="target-pain-item">'I don't know if this idea is actually differentiated'</div>
+          <div class="target-pain-item">'How do I find my positioning before launch?'</div>
+          <div class="target-pain-item">'I need to know what ads are working for competitors'</div>
+          <div class="target-pain-item">'What content format works for this product?'</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MARKETING ANGLES -->
+<div class="sdiv">
+  <div class="sec">
+    <div class="sec-lbl">Marketing strategy</div>
+    <div class="sec-t">The angles that<br><em>actually convert</em></div>
+    <p class="sec-s">Every Chamber report surfaces the positioning that your competitors are ignoring and your buyers are desperate to hear.</p>
+    <div class="angles-grid">
+      <div class="angle-card">
+        <div class="angle-num">ANGLE 01</div>
+        <div class="angle-title">The Agency Killer</div>
+        <div class="angle-desc">Position Chamber as replacing the $2k/mo agency retainer. The buyer has felt this pain acutely — they know they're overpaying. This angle converts fastest with DTC founders who've been burned.</div>
+      </div>
+      <div class="angle-card">
+        <div class="angle-num">ANGLE 02</div>
+        <div class="angle-title">60 Seconds vs 3 Days</div>
+        <div class="angle-desc">Anchor on time. Your competitor isn't another tool — it's the 3-day manual research process. 'What takes your team 3 days takes Chamber 60 seconds' is visceral, believable, and shareable.</div>
+      </div>
+      <div class="angle-card">
+        <div class="angle-num">ANGLE 03</div>
+        <div class="angle-title">The Reddit Truth Serum</div>
+        <div class="angle-desc">Reddit sentiment is the feature no competitor has. 'Your buyers are talking about you on Reddit right now. Chamber shows you what they're saying.' This angle drives fear of missing out — a powerful motivator.</div>
+      </div>
+      <div class="angle-card">
+        <div class="angle-num">ANGLE 04</div>
+        <div class="angle-title">The Influencer Shortcut</div>
+        <div class="angle-desc">The influencer matching feature is a breakthrough for brands who've tried to find creators manually. 'Stop paying $500 to a broker. Get 5 perfectly matched micro-influencers in your report for free.'</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ORBITAL -->
+<div id="how">
+  <div class="orbital-section">
+    <div class="sec" style="padding-bottom:0">
+      <div class="sec-lbl">How it works</div>
+      <div style="display:flex;align-items:flex-end;justify-content:space-between">
+        <div><div class="sec-t">Your full report.<br><em>Six steps. 60 seconds.</em></div></div>
+        <div class="sec-s" style="padding-bottom:8px">Click any node to explore what Chamber delivers. Every analysis runs all six modules simultaneously.</div>
+      </div>
+    </div>
+    <div class="orbital-container" id="orbitalContainer">
+      <div class="orbital-bg-glow"></div>
+      <div class="orbit-ring-2"></div>
+      <div class="orbit-ring"></div>
+      <div class="orbital-center">
+        <div class="orbital-center-inner">⬡</div>
+      </div>
+      <!-- Nodes inserted by JS -->
+    </div>
+  </div>
+</div>
+
+<!-- SAMPLE REPORT -->
+<div class="sec">
+  <div class="sec-lbl">Sample output</div>
+  <div class="sec-t">What a real<br><em>report looks like</em></div>
+  <div class="sample-report">
+    <div class="sr-head">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:42px;height:42px;border-radius:9px;background:var(--bg4);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:20px">🎧</div>
+        <div>
+          <div style="font-size:15px;font-weight:700">SoundWave Pro X Headphones</div>
+          <div style="font-size:11px;font-family:var(--fm);color:var(--text3)">Audio / Consumer Electronics · Analyzed 2 min ago</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="font-size:36px;font-weight:800;letter-spacing:-2px;color:var(--accent)">87</div>
+        <div style="font-size:11px;font-family:var(--fm);color:var(--text3);line-height:1.4">Growth<br>Score</div>
+      </div>
+    </div>
+    <div class="sr-body">
+      <div class="sr-col">
+        <div class="sr-col-title">Top Marketing Angles</div>
+        <div class="sr-angle">Studio quality for commuters</div>
+        <div class="sr-angle">The upgrade audiophiles approve</div>
+        <div class="sr-angle">Work calls that actually sound good</div>
+        <div class="sr-angle">Your gym soundtrack, elevated</div>
+      </div>
+      <div class="sr-col">
+        <div class="sr-col-title">Micro Influencer Matches</div>
+        <div class="sr-inf">
+          <div class="sr-inf-av">🎵</div>
+          <div><div style="font-size:13px;font-weight:600">@audiophile_jay</div><div style="font-size:10px;font-family:var(--fm);color:var(--text3)">42k followers</div></div>
+          <div style="margin-left:auto;font-size:11px;font-family:var(--fm);color:var(--accent);background:var(--adim);padding:3px 8px;border-radius:100px">95%</div>
+        </div>
+        <div class="sr-inf">
+          <div class="sr-inf-av">💼</div>
+          <div><div style="font-size:13px;font-weight:600">@wfh_lifestyle</div><div style="font-size:10px;font-family:var(--fm);color:var(--text3)">28k followers</div></div>
+          <div style="margin-left:auto;font-size:11px;font-family:var(--fm);color:var(--accent);background:var(--adim);padding:3px 8px;border-radius:100px">88%</div>
+        </div>
+        <div class="sr-inf">
+          <div class="sr-inf-av">🏋️</div>
+          <div><div style="font-size:13px;font-weight:600">@gym.tok</div><div style="font-size:10px;font-family:var(--fm);color:var(--text3)">67k followers</div></div>
+          <div style="margin-left:auto;font-size:11px;font-family:var(--fm);color:var(--accent);background:var(--adim);padding:3px 8px;border-radius:100px">81%</div>
+        </div>
+      </div>
+      <div class="sr-col">
+        <div class="sr-col-title">Reddit Sentiment</div>
+        <div class="sr-sent-bar">
+          <div class="sr-sent-row"><span style="color:var(--text2)">Positive</span><span style="font-family:var(--fm);font-size:11px">62%</span></div>
+          <div class="sr-bar"><div style="height:100%;border-radius:3px;background:var(--accent);width:62%"></div></div>
+        </div>
+        <div class="sr-sent-bar">
+          <div class="sr-sent-row"><span style="color:var(--text2)">Neutral</span><span style="font-family:var(--fm);font-size:11px">24%</span></div>
+          <div class="sr-bar"><div style="height:100%;border-radius:3px;background:var(--text3);width:24%"></div></div>
+        </div>
+        <div class="sr-sent-bar">
+          <div class="sr-sent-row"><span style="color:var(--text2)">Negative</span><span style="font-family:var(--fm);font-size:11px">14%</span></div>
+          <div class="sr-bar"><div style="height:100%;border-radius:3px;background:var(--red);width:14%"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 10K PLAN -->
+<div class="sdiv">
+  <div class="sec">
+    <div class="sec-lbl">Growth to 10,000 users</div>
+    <div class="sec-t">The exact plan.<br><em>$0 budget.</em></div>
+    <p class="sec-s">Four phases, zero ad spend. Built on the channels where your buyers already live.</p>
+    <div class="plan-grid">
+      <div class="plan-card">
+        <div class="plan-num">01</div>
+        <div class="plan-phase">PHASE 01 · WEEKS 1–2</div>
+        <div class="plan-title">Build the proof engine</div>
+        <div class="plan-desc">Generate 20 sample reports on known products. Screenshot the best ones. These are your marketing collateral for the next 6 months.</div>
+        <div class="plan-items">
+          <div class="plan-item">Generate 20 sample reports</div>
+          <div class="plan-item">Screenshot the 'wow' moments</div>
+          <div class="plan-item">Set up Twitter, TikTok, Reddit</div>
+          <div class="plan-item">Join 5 e-commerce communities</div>
+        </div>
+        <div class="plan-target">Target: <span>First 50 users</span></div>
+      </div>
+      <div class="plan-card">
+        <div class="plan-num">02</div>
+        <div class="plan-phase">PHASE 02 · WEEKS 3–6</div>
+        <div class="plan-title">Reddit & community</div>
+        <div class="plan-desc">Post your 'I built this' story. Run free analyses for community members. Give value before asking for anything.</div>
+        <div class="plan-items">
+          <div class="plan-item">Post in r/ecommerce, r/FulfillmentByAmazon</div>
+          <div class="plan-item">Offer 10 free reports publicly</div>
+          <div class="plan-item">Daily helpful comments (5/day)</div>
+          <div class="plan-item">Build 200 Twitter followers</div>
+        </div>
+        <div class="plan-target">Target: <span>50 → 300 users</span></div>
+      </div>
+      <div class="plan-card">
+        <div class="plan-num">03</div>
+        <div class="plan-phase">PHASE 03 · MONTH 2</div>
+        <div class="plan-title">Content + TikTok</div>
+        <div class="plan-desc">Film 'I analyzed [famous product]' TikToks. Write Twitter threads with real data. Post 3x per week. One thread can hit 50k impressions.</div>
+        <div class="plan-items">
+          <div class="plan-item">3 TikToks/week showing real reports</div>
+          <div class="plan-item">1 Twitter thread/week with data</div>
+          <div class="plan-item">First blog post (SEO)</div>
+          <div class="plan-item">Reach out to 5 micro-influencers</div>
+        </div>
+        <div class="plan-target">Target: <span>300 → 2,000 users</span></div>
+      </div>
+      <div class="plan-card">
+        <div class="plan-num">04</div>
+        <div class="plan-phase">PHASE 04 · MONTH 3</div>
+        <div class="plan-title">Product Hunt + scale</div>
+        <div class="plan-desc">Launch on Product Hunt. Pitch 5 e-commerce newsletters. Activate referral loop inside the product. One good PH launch = 1,000–5,000 signups.</div>
+        <div class="plan-items">
+          <div class="plan-item">Product Hunt launch day</div>
+          <div class="plan-item">Newsletter pitch to 5 outlets</div>
+          <div class="plan-item">Activate referral mechanic</div>
+          <div class="plan-item">First YouTube video</div>
+        </div>
+        <div class="plan-target">Target: <span>2,000 → 10,000 users</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<div class="sec">
+  <div class="sec-lbl">Everything included</div>
+  <div class="sec-t">Every angle.<br><em>One report.</em></div>
+  <div class="fg">
+    <div class="fc"><div class="fi" style="background:rgba(200,240,74,.1)">🎯</div><div class="fn">Marketing Angles</div><div class="fd2">5 AI-crafted positioning frameworks ready to deploy in ads, email, and social copy.</div></div>
+    <div class="fc"><div class="fi" style="background:rgba(58,255,212,.07)">🔍</div><div class="fn">Competitor Analysis</div><div class="fd2">Top 5 competitors, pricing gaps, messaging weaknesses, and where you can win.</div></div>
+    <div class="fc"><div class="fi" style="background:rgba(200,240,74,.07)">📊</div><div class="fn">Reddit Sentiment</div><div class="fd2">Real buyer opinions from the communities they actually post in — unfiltered.</div></div>
+    <div class="fc"><div class="fi" style="background:rgba(255,184,48,.07)">🤳</div><div class="fn">Influencer Matching</div><div class="fd2">5 micro-influencers with audience overlap, engagement rates, and outreach templates.</div></div>
+    <div class="fc"><div class="fi" style="background:rgba(58,255,212,.07)">📈</div><div class="fn">Growth Score</div><div class="fd2">Composite score from trend data, search volume, saturation, and timing signals.</div></div>
+    <div class="fc"><div class="fi" style="background:rgba(200,240,74,.1)">💡</div><div class="fn">Actionable Tips</div><div class="fd2">Prioritized list of the 5 highest-leverage moves you can make this week.</div></div>
+  </div>
+</div>
+
+<!-- PRICING -->
+<div id="pricing" class="sdiv">
+  <div class="sec">
+    <div class="sec-lbl">Pricing</div>
+    <div class="sec-t">Replace a $2k/mo<br><em>agency retainer</em></div>
+    <div class="pg">
+      <div class="pc">
+        <div class="pn">Starter</div>
+        <div class="pp"><sup>$</sup>29<sub>/mo</sub></div>
+        <div class="pd">For solo founders.</div>
+        <ul class="pfl">
+          <li class="pfi">5 reports / month</li>
+          <li class="pfi">Marketing angles</li>
+          <li class="pfi">Competitor overview</li>
+          <li class="pfi">PDF export</li>
+          <li class="pfi muted">Influencer matching</li>
+          <li class="pfi muted">Reddit deep dive</li>
+        </ul>
+        <button class="btn btn-o btn-lg" style="width:100%">Choose plan</button>
+      </div>
+      <div class="pc feat">
+        <div class="fbadge">Most popular</div>
+        <div class="pn">Growth</div>
+        <div class="pp"><sup>$</sup>99<sub>/mo</sub></div>
+        <div class="pd">For DTC brands.</div>
+        <ul class="pfl">
+          <li class="pfi">25 reports / month</li>
+          <li class="pfi">All Starter features</li>
+          <li class="pfi">5 influencer matches</li>
+          <li class="pfi">Reddit deep dive</li>
+          <li class="pfi">Priority processing</li>
+        </ul>
+        <button class="btn btn-p btn-lg" style="width:100%">Get started →</button>
+      </div>
+      <div class="pc">
+        <div class="pn">Scale</div>
+        <div class="pp"><sup>$</sup>299<sub>/mo</sub></div>
+        <div class="pd">For agencies.</div>
+        <ul class="pfl">
+          <li class="pfi">Unlimited reports</li>
+          <li class="pfi">All Growth features</li>
+          <li class="pfi">API access</li>
+          <li class="pfi">White-label PDF</li>
+          <li class="pfi">Team seats (5)</li>
+        </ul>
+        <button class="btn btn-o btn-lg" style="width:100%">Choose plan</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TESTIMONIALS -->
+<div id="customers" class="sec">
+  <div class="sec-lbl">What people say</div>
+  <div class="sec-t">Founders who<br><em>stopped guessing</em></div>
+  <div class="tg">
+    <div class="tc">
+      <div class="ts-stars">★★★★★</div>
+      <div class="ts-text">"I used to spend 3 days on a competitor analysis. Chamber does it better in 60 seconds. The influencer matches alone paid for 6 months of subscription."</div>
+      <div class="ts-author"><div class="ts-av">🧴</div><div><div class="ts-name">Maya Chen</div><div class="ts-role">Founder, GlowLab Skincare</div></div></div>
+    </div>
+    <div class="tc">
+      <div class="ts-stars">★★★★★</div>
+      <div class="ts-text">"The Reddit sentiment feature is insane. It found a product complaint we'd been missing for months. Fixed it. Sales went up 34% the next quarter."</div>
+      <div class="ts-author"><div class="ts-av">👟</div><div><div class="ts-name">Jordan K.</div><div class="ts-role">Head of Growth, Drift Athletics</div></div></div>
+    </div>
+    <div class="tc">
+      <div class="ts-stars">★★★★★</div>
+      <div class="ts-text">"We run 40+ brands for clients. Chamber replaced two junior analysts. The reports are more thorough, faster, and the marketing angles are actually usable."</div>
+      <div class="ts-author"><div class="ts-av">📊</div><div><div class="ts-name">Priya Osei</div><div class="ts-role">Agency Director, Market Lab</div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- CTA -->
+<div class="cta-section">
+  <div class="cta-glow"></div>
+  <div style="font-size:11px;font-family:var(--fm);color:var(--accent);letter-spacing:.1em;text-transform:uppercase;margin-bottom:24px">Ready to start?</div>
+  <h2 style="font-size:clamp(36px,6vw,72px);font-weight:800;letter-spacing:-2px;line-height:1;margin-bottom:22px">
+    Your first analysis<br>
+    <span style="font-family:var(--fs);font-style:italic;font-weight:400;color:var(--accent)">is on us</span>
+  </h2>
+  <p style="font-size:18px;color:var(--text2);max-width:460px;margin:0 auto 40px;line-height:1.65">No credit card. No setup. Drop in your product and see what you've been missing.</p>
+  <button class="btn btn-p btn-lg">Analyze your product free →</button>
+</div>
+
+<!-- FOOTER -->
+<div style="border-top:1px solid var(--border)">
+  <div class="foot">
+    <div class="fg3">
+      <div>
+        <div class="logo" style="margin-bottom:10px">
+          <div class="logo-mark" style="width:24px;height:24px;border-radius:5px">
+            <svg viewBox="0 0 16 16" fill="none" width="11" height="11"><polygon points="8,1 15,5 15,11 8,15 1,11 1,5" fill="#0A0A08"/></svg>
+          </div>
+          Chamber<em style="color:var(--accent);font-style:normal">.</em>
+        </div>
+        <div class="fbl">AI-powered product intelligence for DTC brands, Amazon sellers, and e-commerce founders.</div>
+      </div>
+      <div>
+        <div class="fct">Product</div>
+        <div class="fls"><span class="fl">Features</span><span class="fl">Pricing</span><span class="fl">Changelog</span><span class="fl">API</span></div>
+      </div>
+      <div>
+        <div class="fct">Company</div>
+        <div class="fls"><span class="fl">About</span><span class="fl">Blog</span><span class="fl">Careers</span><span class="fl">Press</span></div>
+      </div>
+      <div>
+        <div class="fct">Legal</div>
+        <div class="fls"><span class="fl">Privacy</span><span class="fl">Terms</span><span class="fl">Security</span></div>
+      </div>
+    </div>
+    <div class="fbot"><span>© 2025 Chamber, Inc.</span><span>Built for founders who move fast.</span></div>
+  </div>
+</div>
+
+<script>
+// ── SCROLL NAV ──────────────────────────────────────────────────────────────
+window.addEventListener('scroll', () => {
+  document.getElementById('mainNav').classList.toggle('sc', window.scrollY > 20);
+});
+
+function scrollTo(id) {
+  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+}
+
+// ── TICKER ───────────────────────────────────────────────────────────────────
+const tickers = ["Marketing Angles","Competitor Intel","Reddit Sentiment","Micro Influencers","Growth Score","Audience Fit","Price Positioning","Trend Analysis","Product-Market Fit","Launch Readiness","DTC Intelligence","Market Gaps"];
+const tickerEl = document.getElementById('tickerInner');
+const allTickers = [...tickers,...tickers,...tickers,...tickers];
+tickerEl.innerHTML = allTickers.map(t => `<span class="ti"><em>◆</em>${t}</span>`).join('');
+
+// ── ANIMATED HERO WORD ───────────────────────────────────────────────────────
+const words = ["powerful","instant","actionable","precise","profitable"];
+let wordIdx = 0;
+const wordEl = document.getElementById('animWord');
+
+function animateWord() {
+  wordEl.className = 'animated-word word-out';
+  setTimeout(() => {
+    wordIdx = (wordIdx + 1) % words.length;
+    wordEl.textContent = words[wordIdx];
+    wordEl.className = 'animated-word word-in';
+    setTimeout(() => { wordEl.className = 'animated-word word-still'; }, 500);
+  }, 400);
+}
+setInterval(animateWord, 2200);
+
+// ── RADIAL ORBITAL ───────────────────────────────────────────────────────────
+const orbData = [
+  { id:1, emoji:"🎯", title:"Marketing Angles",   date:"Step 01", content:"5 AI-crafted positioning frameworks tailored to your product category and target audience. Hooks, value props, and copy ready to deploy.", status:"completed",   energy:95, related:[2,6] },
+  { id:2, emoji:"🔍", title:"Competitor Analysis", date:"Step 02", content:"Top 5 competitors, their pricing gaps, messaging weaknesses, and the exact holes you can exploit to win market share.",                   status:"completed",   energy:88, related:[1,3] },
+  { id:3, emoji:"📊", title:"Reddit Sentiment",    date:"Step 03", content:"Real unfiltered opinions from your target buyers — scraped from the communities where they actually complain and rave.",                  status:"in-progress", energy:82, related:[2,4] },
+  { id:4, emoji:"🤳", title:"Influencer Match",    date:"Step 04", content:"5 micro-influencers with proven audience overlap, engagement rates above average, and outreach templates ready to copy.",                  status:"in-progress", energy:79, related:[3,5] },
+  { id:5, emoji:"📈", title:"Growth Score",        date:"Step 05", content:"A composite score built from trend data, search volume, market saturation, and timing indicators. Know before you invest.",               status:"pending",     energy:91, related:[4,6] },
+  { id:6, emoji:"💡", title:"Action Plan",         date:"Step 06", content:"Prioritized to-do list of the 5 highest-leverage moves you can make this week. No fluff — just what moves the needle.",                  status:"pending",     energy:86, related:[5,1] },
+];
+
+const container = document.getElementById('orbitalContainer');
+let rotation = 0;
+let autoRotate = true;
+let activeId = null;
+const nodeEls = {};
+
+function getPos(idx, total, rot) {
+  const angle = ((idx / total) * 360 + rot) % 360;
+  const rad = (angle * Math.PI) / 180;
+  const radius = 210;
+  return {
+    x: radius * Math.cos(rad),
+    y: radius * Math.sin(rad),
+    opacity: Math.max(0.35, 0.35 + 0.65 * ((1 + Math.sin(rad)) / 2)),
+    zIndex: Math.round(50 + 40 * Math.cos(rad)),
+    side: Math.cos(rad) > 0 ? 'right' : 'left'
+  };
+}
+
+function statusClass(s) {
+  if (s === 'completed') return 'orb-st-done';
+  if (s === 'in-progress') return 'orb-st-prog';
+  return 'orb-st-pend';
+}
+function statusLabel(s) {
+  if (s === 'completed') return 'COMPLETE';
+  if (s === 'in-progress') return 'IN PROGRESS';
+  return 'PENDING';
+}
+
+// Create nodes
+orbData.forEach((item, idx) => {
+  const wrap = document.createElement('div');
+  wrap.className = 'orb-node';
+  wrap.id = `orb-${item.id}`;
+  wrap.innerHTML = `
+    <div class="orb-node-circle">${item.emoji}</div>
+    <div class="orb-node-label">${item.title}</div>
+  `;
+  wrap.addEventListener('click', e => { e.stopPropagation(); toggleNode(item.id, wrap); });
+  container.appendChild(wrap);
+  nodeEls[item.id] = wrap;
+});
+
+function buildPopup(item, side) {
+  const relatedItems = item.related.map(rid => orbData.find(d => d.id === rid));
+  return `
+    <div class="orb-popup" style="${side === 'right' ? 'right:60px' : 'left:60px'}" onclick="event.stopPropagation()">
+      <div class="popup-header-row">
+        <span class="orb-status ${statusClass(item.status)}">${statusLabel(item.status)}</span>
+        <span style="font-size:10px;font-family:var(--fm);color:var(--text3)">${item.date}</span>
+      </div>
+      <div class="orb-popup-title">${item.title}</div>
+      <div class="orb-popup-body">${item.content}</div>
+      <div class="orb-popup-bar"><div class="orb-popup-fill" style="width:${item.energy}%"></div></div>
+      <div class="orb-popup-meta"><span>Energy level</span><span>${item.energy}%</span></div>
+      <div class="orb-related-row">
+        <span class="orb-related-label">CONNECTED MODULES</span>
+        ${relatedItems.map(r => `<button class="orb-rel-btn" onclick="event.stopPropagation();switchNode(${r.id})">${r.emoji} ${r.title} →</button>`).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function toggleNode(id, el) {
+  if (activeId === id) {
+    activeId = null;
+    autoRotate = true;
+    updateActiveState();
+  } else {
+    activeId = id;
+    autoRotate = false;
+    const pos = getPos(orbData.findIndex(d => d.id === id), orbData.length, rotation);
+    const item = orbData.find(d => d.id === id);
+    // Remove existing popup
+    el.querySelectorAll('.orb-popup').forEach(p => p.remove());
+    el.insertAdjacentHTML('beforeend', buildPopup(item, pos.side));
+    updateActiveState();
+  }
+}
+
+window.switchNode = function(id) {
+  // Remove popup from old active
+  if (activeId) {
+    const old = nodeEls[activeId];
+    old?.querySelectorAll('.orb-popup').forEach(p => p.remove());
+  }
+  activeId = id;
+  const el = nodeEls[id];
+  const pos = getPos(orbData.findIndex(d => d.id === id), orbData.length, rotation);
+  const item = orbData.find(d => d.id === id);
+  el.querySelectorAll('.orb-popup').forEach(p => p.remove());
+  el.insertAdjacentHTML('beforeend', buildPopup(item, pos.side));
+  updateActiveState();
+};
+
+function updateActiveState() {
+  const relatedIds = activeId ? (orbData.find(d => d.id === activeId)?.related || []) : [];
+  orbData.forEach(item => {
+    const el = nodeEls[item.id];
+    el.classList.toggle('active', item.id === activeId);
+    el.classList.toggle('related', relatedIds.includes(item.id));
+    if (item.id !== activeId) {
+      el.querySelectorAll('.orb-popup').forEach(p => p.remove());
+    }
+  });
+}
+
+container.addEventListener('click', () => {
+  if (activeId) {
+    nodeEls[activeId]?.querySelectorAll('.orb-popup').forEach(p => p.remove());
+    activeId = null;
+    autoRotate = true;
+    updateActiveState();
+  }
+});
+
+function renderFrame() {
+  orbData.forEach((item, idx) => {
+    const pos = getPos(idx, orbData.length, rotation);
+    const el = nodeEls[item.id];
+    const isActive = activeId === item.id;
+    el.style.transform = `translate(calc(${pos.x}px - 24px), calc(${pos.y}px - 24px))`;
+    el.style.opacity = isActive ? '1' : pos.opacity;
+    el.style.zIndex = isActive ? '200' : pos.zIndex;
+  });
+}
+
+let last = 0;
+function loop(ts) {
+  if (autoRotate && ts - last > 50) {
+    rotation = (rotation + 0.25) % 360;
+    last = ts;
+  }
+  renderFrame();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
