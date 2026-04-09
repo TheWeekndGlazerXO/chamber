@@ -157,12 +157,12 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);-webkit-font-s
   <div class="pg">
     <!-- FREE -->
     <div class="pc" id="card-free">
-      <div class="plan-name">Free</div>
-      <div class="plan-price"><sup></sup><span id="free-price">$0</span><sub>/mo</sub></div>
+      <div class="plan-name">Starter</div>
+      <div class="plan-price"><sup></sup><span id="free-price">29.99</span><sub>/mo</sub></div>
       <div class="plan-annual" id="free-annual"></div>
-      <div class="plan-desc">For founders exploring the product. No card needed.</div>
+      <div class="plan-desc">For founders exploring the product and getting their first shot.</div>
       <button class="plan-cta cta-outline" id="cta-free" onclick="handleCta('free')">
-        <div class="spin"></div><span class="cta-text">Start for free →</span>
+        <div class="spin"></div><span class="cta-text">Get Started →</span>
       </button>
       <div class="plan-divider"></div>
       <div class="plan-features-title">Included</div>
@@ -186,7 +186,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);-webkit-font-s
     <div class="pc feat" id="card-growth">
       <div class="fbadge">Most popular</div>
       <div class="plan-name">Growth</div>
-      <div class="plan-price"><sup>$</sup><span id="growth-price">99</span><sub>/mo</sub></div>
+      <div class="plan-price"><sup>$</sup><span id="growth-price">29.99</span><sub>/mo</sub></div>
       <div class="plan-annual" id="growth-annual"></div>
       <div class="plan-desc">For DTC brands and active sellers running regular research.</div>
       <button class="plan-cta cta-primary" id="cta-growth" onclick="handleCta('growth')">
@@ -320,8 +320,8 @@ let session = null;
 let userPlan = "free";
 
 const PRICES = {
-  monthly: { starter: 29.99, growth: 59.99, scale: 129.99 },
-  annual: { starter: 19.99, growth: 49.99, scale: 99.99 }
+  monthly: { beginner:9.99, starter: 29.99, growth: 59.99, scale: 129.99 },
+  annual: { beginner:7.99,starter: 19.99, growth: 49.99, scale: 99.99 }
 };
 
 // ─── INIT ─────────────────────────────────────────────────────────
