@@ -468,10 +468,9 @@ body{background:var(--bg);color:var(--text);font-family:var(--fd);-webkit-font-s
 // ═══════════════════════════════════════════════════════
 let SUPABASE_URL      = '';
 let SUPABASE_ANON_KEY = '';
-const API_BASE = window.location.hostname === 'localhost'
-  ? 'http://localhost:3001'
-  : 'https://your-api.com';
-
+const API_BASE = window.location.hostname === 'localhost' 
+  ? 'http://localhost:3001' 
+  : 'https://chamber-0hc1.onrender.com';
 // Stripe Payment Links (from dashboard.stripe.com → Payment Links)
 const STRIPE = {
   starter: 'https://buy.stripe.com/YOUR_STARTER_LINK',
